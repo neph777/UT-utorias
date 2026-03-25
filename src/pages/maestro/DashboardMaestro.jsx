@@ -259,9 +259,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
                     <span className="text-xs text-gray-400 ml-2">{alumno.matricula}</span>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full ${getSemaforoColor(alumno.semaforo)}`}>
-                    {alumno.semaforo === 'rojo'}
-                    {alumno.semaforo === 'amarillo'}
-                    {alumno.semaforo === 'verde'}
+                      {getSemaforoTexto(alumno.semaforo)}
                   </span>
                 </label>
               ))}
