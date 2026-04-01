@@ -13,10 +13,10 @@ const ROUTE_MAP = [
   { path: '/maestro/reportes',        label: 'Reportes' },
 
   { path: '/admin',                   label: 'Panel de Control' },
-  { path: '/admin/grupos',            label: 'Gestión de Grupos' },
-  { path: '/admin/tutores',           label: 'Tutores' },
-  { path: '/admin/reportes',          label: 'Reportes Generales' },
-  { path: '/admin/estadisticas',      label: 'Estadísticas' },
+  { path: '/admin/usuarios',            label: 'Gestión de Usuarios' },
+  { path: '/admin/grupos',           label: 'Gestión de Grupos' },
+  { path: '/admin/semaforo',          label: 'Semaforo General' },
+  
 ]
 
 // Etiqueta amigable para la raíz según rol
@@ -42,7 +42,12 @@ export const useBreadcrumbs = (user) => {
     const match = ROUTE_MAP.find(r => r.path === accumulated)
     if (match) {
       crumbs.push({ label: match.label, path: accumulated })
+    } else if (accumulated.includes('/admin/grupos/')) {
+      crumbs.push({ label: 'Asignación de Alumnos', path: accumulated })
+    } else if (accumulated.includes('/admin/expediente/')) {
+      crumbs.push({ label: 'Expediente del Alumno', path: accumulated })
     }
+    
   }
 
   // El último crumb es la página actual (sin link)
