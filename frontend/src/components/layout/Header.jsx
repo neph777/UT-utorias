@@ -1,29 +1,23 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-
-const BREADCRUMBS = {
-  '/alumno': [{ label: 'Mi Panel' }],
-  '/maestro': [{ label: 'Mis Tutorías' }],
-  '/admin': [{ label: 'Panel de Control' }],
-}
+import { useNavigate, Link } from 'react-router-dom'
+import { useBreadcrumbs } from '../../Hooks/useBreadcrumbs'
 
 const ROLES = {
-  alumno: 'Alumno',
+  alumno:  'Alumno',
   maestro: 'Tutor / Maestro',
-  admin: 'Asesor / Director',
+  admin:   'Asesor / Director',
 }
 
 const Header = ({ user, onLogout }) => {
   const navigate = useNavigate()
-  const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const breadcrumbs = useBreadcrumbs(user)
 
   const handleLogout = () => {
     onLogout()
     navigate('/login')
   }
 
-  const breadcrumbs = BREADCRUMBS[location.pathname] || []
   const iniciales = user?.nombre
     ? user.nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
     : 'U'
@@ -32,17 +26,17 @@ const Header = ({ user, onLogout }) => {
     <header className="bg-dark-500 border-b border-primary-500/20 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
+
           {/* Logo */}
           <div className="flex items-center gap-3">
             <img src="/imagenes/headerutnay.png" alt="Logo UTN" className="w-40" />
           </div>
 
-          {/* Usuario + logout (desktop) */}
+          {/* Usuario + logout — desktop */}
           {user && (
             <div className="hidden md:flex items-center gap-4">
               <div className="flex items-center gap-3">
-                {/* Avatar con iniciales */}
-                <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-semibold">
+                <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-semibold shrink-0">
                   {iniciales}
                 </div>
                 <div className="text-right">
@@ -60,9 +54,9 @@ const Header = ({ user, onLogout }) => {
             </div>
           )}
 
-          {/* Hamburguesa móvil */}
+          {/* Hamburguesa — móvil */}
           <button
-            className="md:hidden text-white"
+            className="md:hidden text-white p-1"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,8 +68,8 @@ const Header = ({ user, onLogout }) => {
 
         {/* Menú móvil */}
         {isMenuOpen && user && (
-          <div className="md:hidden py-4 border-t border-primary-500/20">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="md:hidden py-4 border-t border-primary-500/20 space-y-3">
+            <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-semibold">
                 {iniciales}
               </div>
@@ -94,26 +88,37 @@ const Header = ({ user, onLogout }) => {
         )}
       </div>
 
-      {/* Breadcrumbs — barra secundaria */}
+      {/* Breadcrumbs dinámicos */}
       {breadcrumbs.length > 0 && (
-        <div className="bg-dark-500/80 border-t border-primary-500/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <nav className="flex items-center gap-2 text-xs text-gray-400">
-              <span
-                className="hover:text-primary-400 cursor-pointer transition-colors"
-                onClick={() => navigate(`/${user?.rol}`)}
-              >
-                Inicio
-              </span>
-              {breadcrumbs.map((crumb, i) => (
-                <span key={i} className="flex items-center gap-2">
-                  <span className="text-gray-600">/</span>
-                  <span className={i === breadcrumbs.length - 1 ? 'text-primary-400 font-medium' : 'hover:text-white cursor-pointer'}>
-                    {crumb.label}
-                  </span>
-                </span>
-              ))}
-            </nav>
+        <div className="border-t border-primary-500/10 bg-dark-500/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
+            <div className="breadcrumbs text-xs py-1">
+              <ul>
+                <li>
+                  <Link
+                    to={user ? `/${user.rol}` : '/login'}
+                    className="text-gray-400 hover:text-primary-400"
+                  >
+                    <svg className="w-3.5 h-3.5 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Inicio
+                  </Link>
+                </li>
+                {breadcrumbs.map((crumb) => (
+                  <li key={crumb.path}>
+                    {crumb.isActive ? (
+                      <span className="text-primary-400 font-medium">{crumb.label}</span>
+                    ) : (
+                      <Link to={crumb.path} className="text-gray-400 hover:text-white">
+                        {crumb.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       )}
