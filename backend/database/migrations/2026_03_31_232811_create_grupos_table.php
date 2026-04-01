@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('grupos', function (Blueprint $table) {
             $table->id();
+            $table->string('clave', 10)->unique(); 
+            $table->integer('cuatrimestre');  
+            $table->enum('turno', ['matutino', 'vespertino']);
+            $table->boolean('activo')->default(true);
             $table->timestamps();
         });
     }

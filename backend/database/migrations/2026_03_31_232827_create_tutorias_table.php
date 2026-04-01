@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('tutorias', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('alumno_id')->constrained('alumnos')->onDelete('cascade');
+            $table->foreignId('tutor_id')->constrained('tutores')->onDelete('cascade');
+            $table->date('fecha');
+            $table->text('tema');  
+            $table->text('compromiso')->nullable();
+            $table->text('observaciones')->nullable();
+            $table->enum('estado', ['pendiente', 'completada', 'cancelada'])->default('completada');
             $table->timestamps();
         });
     }

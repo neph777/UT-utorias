@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('alertas', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('alumno_id')->constrained('alumnos')->onDelete('cascade');
+            $table->foreignId('tutor_id')->constrained('tutores')->onDelete('cascade');
+            $table->enum('tipo', ['academica', 'conductual', 'personal', 'asistencia']);  
+            $table->text('Asunto');  
+            $table->date('fecha');  
+            $table->boolean('atendida')->default(false);
             $table->timestamps();
         });
     }
