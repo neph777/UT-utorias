@@ -129,7 +129,7 @@ class Alumno extends Model
         $this->save();
         
         if ($colorAnterior !== $this->semaforo_color) {
-            SemaforoLog::create([
+            \App\Models\SemaforoLog::create([
                 'alumno_id' => $this->id,
                 'tutor_id' => $tutorId,
                 'color_anterior' => $colorAnterior,

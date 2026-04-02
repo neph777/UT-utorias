@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Semaforo extends Model
+class SemaforoLog extends Model
 {
     use HasFactory;
+
+    protected $table = 'semaforo_logs';
 
     protected $fillable = [
         'alumno_id',
@@ -18,6 +20,11 @@ class Semaforo extends Model
         'origen'
     ];
 
+    protected $casts = [
+        'origen' => 'string'
+    ];
+
+    // Relaciones
     public function alumno()
     {
         return $this->belongsTo(Alumno::class);

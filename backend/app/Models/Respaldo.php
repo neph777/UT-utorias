@@ -9,6 +9,8 @@ class Respaldo extends Model
 {
     use HasFactory;
 
+    protected $table = 'respaldo_logs';
+
     protected $fillable = [
         'nombre',
         'fecha',

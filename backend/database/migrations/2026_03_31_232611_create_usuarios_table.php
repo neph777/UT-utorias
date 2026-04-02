@@ -11,10 +11,9 @@ return new class extends Migration
         Schema::create('usuarios', function (Blueprint $table) {
             $table->id();
             $table->string('email', 100)->unique();
-            $table->string('password', 255);  
-            $table->enum('rol', ['alumno', 'tutor', 'admin']);
-            $table->string('nombre_completo', 200);  
-            $table->date('fecha_nacimiento')->nullable();  
+            $table->string('password');
+            $table->enum('rol', ['admin', 'tutor', 'alumno']);
+            $table->string('nombre_completo', 200);
             $table->boolean('activo')->default(true);
             $table->timestamps();
         });

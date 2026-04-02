@@ -11,15 +11,14 @@ class Usuario extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $table = 'usuarios'; 
-    
+    protected $table = 'usuarios';
+
     protected $fillable = [
         'email',
         'password',
         'rol',
         'nombre_completo',
-        'fecha_nacimiento',
-        'activo'
+        'activo'  // ← Quitamos fecha_nacimiento
     ];
 
     protected $hidden = [
@@ -29,10 +28,10 @@ class Usuario extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'fecha_nacimiento' => 'date',
         'activo' => 'boolean'
     ];
 
+    // Relaciones
     public function alumno()
     {
         return $this->hasOne(Alumno::class);

@@ -9,6 +9,8 @@ class Tutor extends Model
 {
     use HasFactory;
 
+    protected $table = 'tutores';  
+
     protected $fillable = [
         'usuario_id',
         'numero_empleado',
@@ -16,6 +18,7 @@ class Tutor extends Model
         'especialidad'
     ];
 
+    // Relaciones
     public function usuario()
     {
         return $this->belongsTo(Usuario::class);
@@ -44,10 +47,5 @@ class Tutor extends Model
     public function semaforoLogs()
     {
         return $this->hasMany(SemaforoLog::class);
-    }
-
-    public function alumnosEnRiesgo()
-    {
-        return $this->alumnos()->where('semaforo_color', 'rojo')->get();
     }
 }

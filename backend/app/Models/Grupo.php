@@ -9,6 +9,8 @@ class Grupo extends Model
 {
     use HasFactory;
 
+    protected $table = 'grupos';
+
     protected $fillable = [
         'clave',
         'cuatrimestre',
