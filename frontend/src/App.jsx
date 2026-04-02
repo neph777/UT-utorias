@@ -1,57 +1,81 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useState } from 'react'
-import Login from './pages/Login'
-import DashboardAlumno from './pages/alumno/DashboardAlumno'
-import DashboardMaestro from './pages/maestro/DashboardMaestro'
-import DashboardAdmin from './pages/admin/DashboardAdmin'
-import GestionUsuarios from './pages/admin/GestionUsuarios'
-import GestionGrupos from './pages/admin/GestionGrupos'
-import AsignacionAlumnos from './pages/admin/AsignacionAlumnos'
-import ExpedienteAlumno from './pages/admin/ExpedienteAlumno'
-import SemaforoGeneral from './pages/admin/SemaforoGeneral'
-
-// Componente guardián de rutas
-const PrivateRoute = ({ user, rolRequerido, children }) => {
-  if (!user) return <Navigate to="/login" replace />
-  if (rolRequerido && user.rol !== rolRequerido) return <Navigate to="/login" replace />
-  return children
-}
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { api } from './services/api';
+import Login from './pages/Login';
+import DashboardAdmin from './pages/admin/DashboardAdmin';
 
 function App() {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const adminRoute = (children) => (
-    <PrivateRoute user={user} rolRequerido="admin">{children}</PrivateRoute>
-  )
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      cargarPerfil();
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const cargarPerfil = async () => {
+    try {
+      const data = await api.getPerfil();
+      setUser(data);
+    } catch (error) {
+      console.error('Error al cargar perfil:', error);
+      localStorage.removeItem('token');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = (userData) => {
+    console.log('Login exitoso:', userData);
+    setUser(userData);
+  };
+
+  const handleLogout = async () => {
+    await api.logout();
+    setUser(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login setUser={setUser} />} />
-
-        <Route path="/alumno" element={
-          <PrivateRoute user={user} rolRequerido="alumno">
-            <DashboardAlumno user={user} onLogout={() => setUser(null)} />
-          </PrivateRoute>
-        } />
-
-        <Route path="/maestro" element={
-          <PrivateRoute user={user} rolRequerido="maestro">
-            <DashboardMaestro user={user} onLogout={() => setUser(null)} />
-          </PrivateRoute>
-        } />
-
-        <Route path="/admin" element={adminRoute(<DashboardAdmin user={user} onLogout={() => setUser(null)} />)} />
-        <Route path="/admin/usuarios" element={adminRoute(<GestionUsuarios user={user} onLogout={() => setUser(null)} />)} />
-        <Route path="/admin/grupos" element={adminRoute(<GestionGrupos user={user} onLogout={() => setUser(null)} />)} />
-        <Route path="/admin/grupos/:grupoId" element={adminRoute(<AsignacionAlumnos user={user} onLogout={() => setUser(null)} />)} />
-        <Route path="/admin/expediente/:alumnoId" element={adminRoute(<ExpedienteAlumno user={user} onLogout={() => setUser(null)} />)} />
-        <Route path="/admin/semaforo" element={adminRoute(<SemaforoGeneral user={user} onLogout={() => setUser(null)} />)} />
-
+        <Route 
+          path="/login" 
+          element={
+            user ? (
+              <Navigate to={`/${user.rol}`} replace />
+            ) : (
+              <Login onLogin={handleLogin} />
+            )
+          } 
+        />
+        
+        <Route 
+          path="/admin" 
+          element={
+            user?.rol === 'admin' ? (
+              <DashboardAdmin user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
+        
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;

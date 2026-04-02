@@ -1,6 +1,8 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
 
+// Configuración de roles con iconos y descripciones
 const ROLES = [
   {
     value: 'alumno',
@@ -14,7 +16,7 @@ const ROLES = [
     ),
   },
   {
-    value: 'maestro',
+    value: 'tutor', // Cambiado de 'maestro' a 'tutor' para coincidir con el backend
     label: 'Maestro / Tutor',
     description: 'Gestiona el seguimiento de tus grupos',
     icon: (
@@ -35,44 +37,63 @@ const ROLES = [
       </svg>
     ),
   },
-]
+];
 
-const MOCK_USERS = {
-  alumno:  { id: 1, nombre: 'María García',      rol: 'alumno',  email: 'maria@utn.edu.mx' },
-  maestro: { id: 2, nombre: 'Dr. Juan Pérez',    rol: 'maestro', email: 'juan.perez@utn.edu.mx' },
-  admin:   { id: 3, nombre: 'Director de Carrera', rol: 'admin', email: 'direccion@utn.edu.mx' },
-}
+const Login = ({ onLogin }) => {
+  const navigate = useNavigate();
+  const [rol, setRol] = useState('alumno');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-const Login = ({ setUser }) => {
-  const [rol, setRol]           = useState('alumno')
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [showPass, setShowPass] = useState(false)
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
-  const navigate = useNavigate()
+  // Manejar el envío del formulario con autenticación real
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-  const handleLogin = async (e) => {
-    e.preventDefault()
-    setError('')
-
-    // Validación básica para datos mock
+    // Validación básica antes de enviar
     if (!email.includes('@')) {
-      setError('Ingresa un correo electrónico válido.')
-      return
+      setError('Ingresa un correo electrónico válido.');
+      setLoading(false);
+      return;
     }
+    
     if (password.length < 4) {
-      setError('La contraseña debe tener al menos 4 caracteres.')
-      return
+      setError('La contraseña debe tener al menos 4 caracteres.');
+      setLoading(false);
+      return;
     }
 
-    setLoading(true)
-    // Simula latencia de red
-    await new Promise(r => setTimeout(r, 700))
-
-    setUser(MOCK_USERS[rol])
-    navigate(`/${rol}`)
-  }
+    // Llamar a la API real
+    const result = await api.login(email, password);
+    
+    if (result.success) {
+      // Llamar al callback para guardar el usuario en el contexto/estado global
+      onLogin(result.user);
+      
+      // Redirigir según el rol del usuario (usando el rol real del backend)
+      switch (result.user.rol) {
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'tutor':
+          navigate('/tutor');
+          break;
+        case 'alumno':
+          navigate('/alumno');
+          break;
+        default:
+          navigate('/');
+      }
+    } else {
+      setError(result.error || 'Error al iniciar sesión. Verifica tus credenciales.');
+    }
+    
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen flex bg-base-100">
@@ -146,7 +167,7 @@ const Login = ({ setUser }) => {
             <p className="text-gray-400 text-sm mt-1">Ingresa con tu cuenta institucional</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5" noValidate>
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
 
             {/* Selector de rol — tarjetas visuales */}
             <div>
@@ -195,7 +216,7 @@ const Login = ({ setUser }) => {
                   placeholder="ejemplo@utn.edu.mx"
                   className="input input-bordered w-full pl-9 focus:border-primary-500 focus:outline-none"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setError('') }}
+                  onChange={(e) => { setEmail(e.target.value); setError(''); }}
                   required
                   autoComplete="email"
                 />
@@ -224,7 +245,7 @@ const Login = ({ setUser }) => {
                   placeholder="••••••••"
                   className="input input-bordered w-full pl-9 pr-10 focus:border-primary-500 focus:outline-none"
                   value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError('') }}
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
                   required
                   autoComplete="current-password"
                 />
@@ -290,7 +311,7 @@ const Login = ({ setUser }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;
