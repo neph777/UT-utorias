@@ -7,24 +7,21 @@ use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        // Log para saber que entró al método
         Log::info('Login method called');
         
         try {
-            Log::info('Request data: ', $request->all());
-            
-            $validator = validator($request->all(), [
+            $validator = Validator::make($request->all(), [
                 'email' => 'required|email',
                 'password' => 'required|string'
             ]);
             
             if ($validator->fails()) {
-                Log::error('Validation failed: ', $validator->errors()->toArray());
                 return response()->json([
                     'success' => false,
                     'message' => 'Datos inválidos',
@@ -32,11 +29,7 @@ class AuthController extends Controller
                 ], 422);
             }
             
-            Log::info('Looking for user: ' . $request->email);
-            
             $usuario = Usuario::where('email', $request->email)->first();
-            
-            Log::info('User found: ' . ($usuario ? 'Yes' : 'No'));
             
             if (!$usuario) {
                 return response()->json([
@@ -45,21 +38,17 @@ class AuthController extends Controller
                 ], 404);
             }
             
-            Log::info('Checking password...');
-            
             if (!Hash::check($request->password, $usuario->password)) {
-                Log::warning('Wrong password for user: ' . $request->email);
                 return response()->json([
                     'success' => false,
                     'message' => 'Contraseña incorrecta'
                 ], 401);
             }
             
-            Log::info('Generating token...');
+            // Revocar tokens anteriores (opcional)
+            $usuario->tokens()->delete();
             
             $token = $usuario->createToken('auth_token')->plainTextToken;
-            
-            Log::info('Token generated successfully');
             
             return response()->json([
                 'success' => true,
@@ -75,13 +64,11 @@ class AuthController extends Controller
             
         } catch (\Exception $e) {
             Log::error('Login error: ' . $e->getMessage());
-            Log::error('File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+            Log::error('Trace: ' . $e->getTraceAsString());
             
             return response()->json([
                 'success' => false,
-                'message' => 'Error interno: ' . $e->getMessage(),
-                'file' => basename($e->getFile()),
-                'line' => $e->getLine()
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -95,7 +82,6 @@ class AuthController extends Controller
                 'message' => 'Sesión cerrada'
             ]);
         } catch (\Exception $e) {
-            Log::error('Logout error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al cerrar sesión'
@@ -106,13 +92,47 @@ class AuthController extends Controller
     public function perfil(Request $request)
     {
         try {
-            return response()->json($request->user());
+            $user = $request->user();
+            return response()->json([
+                'id' => $user->id,
+                'email' => $user->email,
+                'nombre_completo' => $user->nombre_completo,
+                'rol' => $user->rol
+            ]);
         } catch (\Exception $e) {
-            Log::error('Perfil error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener perfil'
             ], 500);
+        }
+    }
+    
+    public function cambiarPassword(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'current_password' => 'required|string',
+                'new_password' => 'required|string|min:6',
+            ]);
+            
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+            
+            $user = $request->user();
+            
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json(['message' => 'Contraseña actual incorrecta'], 401);
+            }
+            
+            $user->password = Hash::make($request->new_password);
+            $user->save();
+            
+            return response()->json(['message' => 'Contraseña actualizada correctamente']);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al cambiar password: ' . $e->getMessage());
+            return response()->json(['message' => 'Error al cambiar contraseña'], 500);
         }
     }
 }

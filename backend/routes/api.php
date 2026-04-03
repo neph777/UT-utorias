@@ -15,8 +15,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/perfil', [AuthController::class, 'perfil']);
     Route::post('/cambiar-password', [AuthController::class, 'cambiarPassword']);
-    });
-
+    
     // Rutas de administrador
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         // Dashboard
@@ -33,3 +32,4 @@ Route::middleware('auth:sanctum')->group(function () {
         // Expediente de alumno
         Route::get('/alumnos/{id}/expediente', [AlumnoController::class, 'expediente']);
     });
+}); // <-- CIERRA EL PRIMER GROUP

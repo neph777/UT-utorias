@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { api } from './services/api';
 import Login from './pages/Login';
 import DashboardAdmin from './pages/admin/DashboardAdmin';
@@ -9,26 +9,59 @@ import AsignacionAlumnos from './pages/admin/AsignacionAlumnos';
 import ExpedienteAlumno from './pages/admin/ExpedienteAlumno';
 import SemaforoGeneral from './pages/admin/SemaforoGeneral';
 
-function App() {
+// Componente principal que usa useNavigate
+function AppContent() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); // <-- AGREGADO
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      cargarPerfil();
-    } else {
-      setLoading(false);
+  // Función para verificar si el token expiró
+  const tokenExpirado = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000 < Date.now();
+    } catch {
+      return true;
     }
+  };
+
+  // Modifica tu useEffect en AppContent
+  useEffect(() => {
+    const checkAuth = async () => {
+      console.log('1. Iniciando checkAuth');
+      const token = localStorage.getItem('token');
+      console.log('2. Token encontrado:', token ? 'Sí existe' : 'No existe');
+      
+      if (!token || tokenExpirado(token)) {
+        console.log('3. Token inválido o expirado, redirigiendo a login');
+        localStorage.removeItem('token');
+        navigate('/login');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('4. Token válido, cargando perfil...');
+      await cargarPerfil();
+    };
+    
+    checkAuth();
   }, []);
 
   const cargarPerfil = async () => {
+    console.log('5. Ejecutando cargarPerfil');
     try {
       const data = await api.getPerfil();
+      console.log('6. Perfil cargado exitosamente:', data);
       setUser(data);
     } catch (error) {
-      console.error('Error al cargar perfil:', error);
+      console.error('7. Error en cargarPerfil:', error);
+      console.error('8. Detalles del error:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status
+      });
       localStorage.removeItem('token');
+      navigate('/login');
     } finally {
       setLoading(false);
     }
@@ -42,6 +75,7 @@ function App() {
   const handleLogout = async () => {
     await api.logout();
     setUser(null);
+    navigate('/login');
   };
 
   if (loading) {
@@ -53,89 +87,95 @@ function App() {
   }
 
   return (
+    <Routes>
+      <Route 
+        path="/login" 
+        element={
+          user ? (
+            <Navigate to={`/${user.rol}`} replace />
+          ) : (
+            <Login onLogin={handleLogin} />
+          )
+        } 
+      />
+      
+      {/* Dashboard Admin */}
+      <Route 
+        path="/admin" 
+        element={
+          user?.rol === 'admin' ? (
+            <DashboardAdmin user={user} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        } 
+      />
+      
+      <Route 
+        path="/admin/usuarios" 
+        element={
+          user?.rol === 'admin' ? (
+            <GestionUsuarios user={user} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        } 
+      />
+      
+      <Route 
+        path="/admin/grupos" 
+        element={
+          user?.rol === 'admin' ? (
+            <GestionGrupos user={user} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        } 
+      />
+      
+      <Route 
+        path="/admin/grupos/:grupoId" 
+        element={
+          user?.rol === 'admin' ? (
+            <AsignacionAlumnos user={user} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        } 
+      />
+      
+      <Route 
+        path="/admin/alumnos/:alumnoId" 
+        element={
+          user?.rol === 'admin' ? (
+            <ExpedienteAlumno user={user} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        } 
+      />
+      
+      <Route 
+        path="/admin/semaforo" 
+        element={
+          user?.rol === 'admin' ? (
+            <SemaforoGeneral user={user} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        } 
+      />
+      
+      <Route path="/" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+}
+
+// Componente App principal que envuelve con BrowserRouter
+function App() {
+  return (
     <BrowserRouter>
-      <Routes>
-        <Route 
-          path="/login" 
-          element={
-            user ? (
-              <Navigate to={`/${user.rol}`} replace />
-            ) : (
-              <Login onLogin={handleLogin} />
-            )
-          } 
-        />
-        
-        {/* Dashboard Admin */}
-        <Route 
-          path="/admin" 
-          element={
-            user?.rol === 'admin' ? (
-              <DashboardAdmin user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
-        
-        {/* AGREGAR ESTAS RUTAS */}
-        <Route 
-          path="/admin/usuarios" 
-          element={
-            user?.rol === 'admin' ? (
-              <GestionUsuarios user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
-        
-        <Route 
-          path="/admin/grupos" 
-          element={
-            user?.rol === 'admin' ? (
-              <GestionGrupos user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
-        
-        <Route 
-          path="/admin/grupos/:grupoId" 
-          element={
-            user?.rol === 'admin' ? (
-              <AsignacionAlumnos user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
-        
-        <Route 
-          path="/admin/alumnos/:alumnoId" 
-          element={
-            user?.rol === 'admin' ? (
-              <ExpedienteAlumno user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
-        
-        <Route 
-          path="/admin/semaforo" 
-          element={
-            user?.rol === 'admin' ? (
-              <SemaforoGeneral user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
-        
-        <Route path="/" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <AppContent />
     </BrowserRouter>
   );
 }

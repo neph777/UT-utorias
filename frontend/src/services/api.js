@@ -8,9 +8,11 @@ const removeToken = () => localStorage.removeItem('token');
 // HELPER PARA PETICIONES AUTENTICADAS
 const authFetch = async (url, options = {}) => {
   const token = getToken();
+  console.log(`authFetch: ${url}, Token: ${token ? 'Sí' : 'No'}`);
   
   const headers = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     ...options.headers,
   };
   
@@ -18,18 +20,33 @@ const authFetch = async (url, options = {}) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  const response = await fetch(`${API_URL}${url}`, {
-    ...options,
-    headers,
-  });
-  
-  if (response.status === 401) {
-    removeToken();
-    window.location.href = '/login';
-    throw new Error('No autorizado');
+  try {
+    const response = await fetch(`${API_URL}${url}`, {
+      ...options,
+      headers,
+    });
+    
+    console.log(`Respuesta ${url}:`, response.status);
+    
+    if (response.status === 401) {
+      console.log('401 detectado, eliminando token');
+      removeToken();
+      window.location.href = '/login';
+      throw new Error('No autorizado');
+    }
+    
+    if (!response.ok) {
+      console.log(`Error ${response.status} en ${url}`);
+      const errorData = await response.json().catch(() => ({}));
+      console.log('Error details:', errorData);
+      throw new Error(errorData.message || `Error ${response.status}`);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error(`Error en authFetch para ${url}:`, error);
+    throw error;
   }
-  
-  return response;
 };
 
 // API ENDPOINTS
@@ -37,15 +54,20 @@ export const api = {
   // AUTENTICACIÓN 
 login: async (email, password) => {
   console.log('API login llamada con:', email);
+  console.log('URL:', `${API_URL}/login`);
   
   try {
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({ email, password })
     });
     
     console.log('Respuesta status:', response.status);
+    console.log('Respuesta ok?', response.ok);
     
     const data = await response.json();
     console.log('Respuesta data:', data);
@@ -78,10 +100,41 @@ login: async (email, password) => {
     }
   },
   
+  // Modifica la función getPerfil en api.js
   getPerfil: async () => {
+  console.log('=== getPerfil iniciado ===');
+  const token = getToken();
+  console.log('Token existe:', !!token);
+  
+  if (!token) {
+    console.log('No hay token');
+    throw new Error('No hay token');
+  }
+  
+  try {
     const response = await authFetch('/perfil');
-    return response.json();
-  },
+    console.log('Status response:', response.status);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Datos recibidos:', data);
+    
+    // Normalizar los datos del usuario
+    return {
+      id: data.id,
+      email: data.email,
+      nombre_completo: data.nombre_completo || data.name,
+      rol: data.rol,
+      name: data.nombre_completo || data.name
+    };
+  } catch (error) {
+    console.error('Error en getPerfil:', error);
+    throw error;
+  }
+},
   
   cambiarPassword: async (data) => {
     const response = await authFetch('/cambiar-password', {
@@ -98,11 +151,11 @@ login: async (email, password) => {
   },
   
   // ADMIN - DASHBOARD 
-  getDashboardAdmin: async () => {
-    const response = await authFetch('/admin/dashboard');
-    return response.json();
-  },
-  
+ getDashboardAdmin: async () => {
+  const response = await authFetch('/admin/dashboard');
+  return response.json();
+},
+
   // ADMIN - USUARIOS 
   getUsuarios: async (search = '') => {
     const response = await authFetch(`/admin/usuarios?search=${search}`);
