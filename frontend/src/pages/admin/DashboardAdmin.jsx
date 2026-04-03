@@ -135,19 +135,19 @@ const DashboardAdmin = ({ user, onLogout }) => {
                   onClick={() => navigate('/admin/usuarios')}
                   className="btn btn-outline btn-primary w-full justify-start"
                 >
-                  📋 Gestionar usuarios y roles
+                  Gestionar usuarios y roles
                 </button>
                 <button
                   onClick={() => navigate('/admin/grupos')}
                   className="btn btn-outline btn-primary w-full justify-start"
                 >
-                  👥 Gestionar grupos
+                  Gestionar grupos
                 </button>
                 <button
                   onClick={() => navigate('/admin/semaforo')}
                   className="btn btn-outline btn-primary w-full justify-start"
                 >
-                  🚦 Ver semáforo general
+                   Ver semáforo general
                 </button>
               </div>
             </div>

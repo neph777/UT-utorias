@@ -1,39 +1,142 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Layout from '../../components/layout/Layout'
-import { grupos, alumnos } from '../../data/mockData'
+import { api } from '../../services/api'
 
 const AsignacionAlumnos = ({ user, onLogout }) => {
   const { grupoId } = useParams()
   const navigate = useNavigate()
-  const grupo = grupos.find(g => g.id === Number(grupoId))
+  
+  const [grupo, setGrupo] = useState(null)
+  const [asignados, setAsignados] = useState([])
+  const [disponibles, setDisponibles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
 
-  const [asignados, setAsignados]       = useState(
-    alumnos.filter(a => grupo?.alumnos.includes(a.id))
-  )
-  const [disponibles, setDisponibles]   = useState(
-    alumnos.filter(a => !grupo?.alumnos.includes(a.id))
-  )
+  // Cargar datos del grupo y alumnos
+  useEffect(() => {
+    cargarDatos()
+  }, [grupoId])
 
-  if (!grupo) return (
-    <Layout user={user} onLogout={onLogout}>
-      <div className="p-6 text-center text-gray-500">Grupo no encontrado</div>
-    </Layout>
-  )
-
-  const asignar = (alumno) => {
-    setAsignados([...asignados, alumno])
-    setDisponibles(disponibles.filter(a => a.id !== alumno.id))
+  const cargarDatos = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      // Obtener lista de grupos
+      const gruposData = await api.getGrupos()
+      const grupoActual = gruposData.find(g => g.id === parseInt(grupoId))
+      
+      if (!grupoActual) {
+        setError('Grupo no encontrado')
+        setLoading(false)
+        return
+      }
+      
+      setGrupo(grupoActual)
+      
+      // Obtener alumnos disponibles (no asignados a ningún grupo)
+      const alumnosDisponibles = await api.getAlumnosDisponibles()
+      
+      // Obtener alumnos asignados a este grupo
+      // Si tu API tiene un endpoint para obtener alumnos del grupo, úsalo
+      // Por ahora, asumimos que los alumnos asignados vienen en grupoActual.alumnos
+      const alumnosAsignados = grupoActual.alumnos || []
+      
+      setAsignados(alumnosAsignados)
+      setDisponibles(alumnosDisponibles.filter(
+        alumno => !alumnosAsignados.some(a => a.id === alumno.id)
+      ))
+      
+    } catch (error) {
+      console.error('Error cargando datos:', error)
+      setError('Error al cargar los datos. Por favor, intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const quitar = (alumno) => {
-    setDisponibles([...disponibles, alumno])
-    setAsignados(asignados.filter(a => a.id !== alumno.id))
+  const asignar = async (alumno) => {
+    setSaving(true)
+    try {
+      // Llamar a la API para asignar alumno al grupo
+      const nuevosAlumnos = [...asignados, alumno]
+      await api.asignarAlumnos(grupoId, nuevosAlumnos.map(a => a.id))
+      
+      // Actualizar estado local
+      setAsignados(nuevosAlumnos)
+      setDisponibles(disponibles.filter(a => a.id !== alumno.id))
+      
+      // Mostrar mensaje de éxito (opcional)
+      console.log('Alumno asignado correctamente')
+      
+    } catch (error) {
+      console.error('Error al asignar:', error)
+      alert('Error al asignar el alumno. Por favor, intenta de nuevo.')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const semaforoBadge = (s) => {
-    const clases = { rojo: 'badge-error', amarillo: 'badge-warning', verde: 'badge-success' }
-    return <span className={`badge badge-sm ${clases[s]}`}>{s}</span>
+  const quitar = async (alumno) => {
+    setSaving(true)
+    try {
+      // Llamar a la API para quitar alumno del grupo
+      const nuevosAlumnos = asignados.filter(a => a.id !== alumno.id)
+      await api.asignarAlumnos(grupoId, nuevosAlumnos.map(a => a.id))
+      
+      // Actualizar estado local
+      setAsignados(nuevosAlumnos)
+      setDisponibles([...disponibles, alumno])
+      
+      // Mostrar mensaje de éxito (opcional)
+      console.log('Alumno removido correctamente')
+      
+    } catch (error) {
+      console.error('Error al quitar:', error)
+      alert('Error al quitar el alumno. Por favor, intenta de nuevo.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const semaforoBadge = (semaforo) => {
+    const clases = { 
+      'rojo': 'badge-error', 
+      'amarillo': 'badge-warning', 
+      'verde': 'badge-success' 
+    }
+    return <span className={`badge badge-sm ${clases[semaforo] || 'badge-ghost'}`}>{semaforo}</span>
+  }
+
+  if (loading) {
+    return (
+      <Layout user={user} onLogout={onLogout}>
+        <div className="p-6 text-center">
+          <span className="loading loading-spinner loading-lg"></span>
+          <p className="mt-2 text-gray-500">Cargando datos...</p>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (error || !grupo) {
+    return (
+      <Layout user={user} onLogout={onLogout}>
+        <div className="p-6 text-center">
+          <div className="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{error || 'Grupo no encontrado'}</span>
+          </div>
+          <button onClick={() => navigate('/admin/grupos')} className="btn btn-primary mt-4">
+            Volver a Grupos
+          </button>
+        </div>
+      </Layout>
+    )
   }
 
   return (
@@ -41,14 +144,31 @@ const AsignacionAlumnos = ({ user, onLogout }) => {
       <div className="p-6 max-w-7xl mx-auto">
 
         <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => navigate('/admin/grupos')} className="btn btn-sm btn-outline">
+          <button 
+            onClick={() => navigate('/admin/grupos')} 
+            className="btn btn-sm btn-outline"
+            disabled={saving}
+          >
             ← Volver
           </button>
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Asignación de Alumnos</h1>
-            <p className="text-gray-500 mt-1">Grupo: <span className="font-semibold text-primary-500">{grupo.nombre}</span></p>
+            <p className="text-gray-500 mt-1">
+              Grupo: <span className="font-semibold text-primary-500">{grupo.nombre}</span>
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {grupo.grado && `Grado: ${grupo.grado} | `}
+              {grupo.cuatrimestre && `Cuatrimestre: ${grupo.cuatrimestre}`}
+            </p>
           </div>
         </div>
+
+        {saving && (
+          <div className="alert alert-info mb-4">
+            <span className="loading loading-spinner loading-sm"></span>
+            <span>Guardando cambios...</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -56,24 +176,36 @@ const AsignacionAlumnos = ({ user, onLogout }) => {
           <div className="card bg-base-100 shadow-sm border border-base-200">
             <div className="card-body p-0">
               <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center">
-                <h2 className="font-semibold text-gray-800">En este grupo</h2>
+                <h2 className="font-semibold text-gray-800">Alumnos Asignados</h2>
                 <span className="badge badge-primary">{asignados.length}</span>
               </div>
               {asignados.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-8">Sin alumnos asignados</p>
+                <p className="text-gray-400 text-sm text-center py-8">
+                  No hay alumnos asignados a este grupo
+                </p>
               ) : (
-                <div className="divide-y divide-base-200">
-                  {asignados.map(a => (
-                    <div key={a.id} className="flex items-center justify-between px-6 py-3">
-                      <div>
-                        <p className="font-medium text-sm text-gray-800">{a.nombre}</p>
-                        <p className="text-xs text-gray-400">{a.matricula}</p>
+                <div className="divide-y divide-base-200 max-h-[600px] overflow-y-auto">
+                  {asignados.map(alumno => (
+                    <div key={alumno.id} className="flex items-center justify-between px-6 py-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm text-gray-800">
+                          {alumno.nombre_completo || alumno.nombre}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Matrícula: {alumno.matricula || alumno.email}
+                        </p>
+                        {alumno.carrera && (
+                          <p className="text-xs text-gray-400">
+                            Carrera: {alumno.carrera}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
-                        {semaforoBadge(a.semaforo)}
+                        {alumno.semaforo && semaforoBadge(alumno.semaforo)}
                         <button
-                          onClick={() => quitar(a)}
+                          onClick={() => quitar(alumno)}
                           className="btn btn-xs btn-outline btn-error"
+                          disabled={saving}
                         >
                           Quitar
                         </button>
@@ -89,26 +221,38 @@ const AsignacionAlumnos = ({ user, onLogout }) => {
           <div className="card bg-base-100 shadow-sm border border-base-200">
             <div className="card-body p-0">
               <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center">
-                <h2 className="font-semibold text-gray-800">Disponibles</h2>
+                <h2 className="font-semibold text-gray-800">Alumnos Disponibles</h2>
                 <span className="badge badge-ghost">{disponibles.length}</span>
               </div>
               {disponibles.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-8">No hay alumnos disponibles</p>
+                <p className="text-gray-400 text-sm text-center py-8">
+                  No hay alumnos disponibles para asignar
+                </p>
               ) : (
-                <div className="divide-y divide-base-200">
-                  {disponibles.map(a => (
-                    <div key={a.id} className="flex items-center justify-between px-6 py-3">
-                      <div>
-                        <p className="font-medium text-sm text-gray-800">{a.nombre}</p>
-                        <p className="text-xs text-gray-400">{a.matricula}</p>
+                <div className="divide-y divide-base-200 max-h-[600px] overflow-y-auto">
+                  {disponibles.map(alumno => (
+                    <div key={alumno.id} className="flex items-center justify-between px-6 py-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm text-gray-800">
+                          {alumno.nombre_completo || alumno.nombre}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Matrícula: {alumno.matricula || alumno.email}
+                        </p>
+                        {alumno.carrera && (
+                          <p className="text-xs text-gray-400">
+                            Carrera: {alumno.carrera}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
-                        {semaforoBadge(a.semaforo)}
+                        {alumno.semaforo && semaforoBadge(alumno.semaforo)}
                         <button
-                          onClick={() => asignar(a)}
+                          onClick={() => asignar(alumno)}
                           className="btn btn-xs btn-outline btn-primary"
+                          disabled={saving}
                         >
-                          Agregar
+                          Asignar
                         </button>
                       </div>
                     </div>
@@ -119,6 +263,25 @@ const AsignacionAlumnos = ({ user, onLogout }) => {
           </div>
 
         </div>
+
+        {/* Botón para guardar cambios masivos (opcional) */}
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            onClick={() => navigate('/admin/grupos')}
+            className="btn btn-ghost"
+            disabled={saving}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={cargarDatos}
+            className="btn btn-outline"
+            disabled={saving}
+          >
+            Refrescar
+          </button>
+        </div>
+
       </div>
     </Layout>
   )

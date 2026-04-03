@@ -185,47 +185,47 @@ login: async (email, password) => {
     return response.json();
   },
   
-  // ADMIN - GRUPOS 
-  getGrupos: async () => {
-    const response = await authFetch('/admin/grupos');
-    return response.json();
-  },
+  // ADMIN - GRUPOS
+getGrupos: async () => {
+  const response = await authFetch('/admin/grupos');
+  const data = await response.json();
   
-  crearGrupo: async (data) => {
-    const response = await authFetch('/admin/grupos', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    return response.json();
-  },
+  // Asegurar que cada grupo tenga la propiedad 'alumnos'
+  if (Array.isArray(data)) {
+    return data.map(grupo => ({
+      ...grupo,
+      alumnos: grupo.alumnos || []
+    }));
+  }
+  return data;
+},
+
+getAlumnosDisponibles: async () => {
+  const response = await authFetch('/admin/alumnos-disponibles');
+  const data = await response.json();
   
-  actualizarGrupo: async (id, data) => {
-    const response = await authFetch(`/admin/grupos/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
-    return response.json();
-  },
-  
-  eliminarGrupo: async (id) => {
-    const response = await authFetch(`/admin/grupos/${id}`, {
-      method: 'DELETE'
-    });
-    return response.json();
-  },
-  
-  asignarAlumnos: async (grupoId, alumnos) => {
-    const response = await authFetch(`/admin/grupos/${grupoId}/asignar-alumnos`, {
-      method: 'POST',
-      body: JSON.stringify({ alumnos })
-    });
-    return response.json();
-  },
-  
-  getAlumnosDisponibles: async () => {
-    const response = await authFetch('/admin/alumnos-disponibles');
-    return response.json();
-  },
+  // Asegurar que los alumnos tengan las propiedades necesarias
+  if (Array.isArray(data)) {
+    return data.map(alumno => ({
+      id: alumno.id,
+      nombre_completo: alumno.nombre_completo,
+      nombre: alumno.nombre_completo, // Para compatibilidad
+      email: alumno.email,
+      matricula: alumno.matricula || alumno.email,
+      semaforo: alumno.semaforo || 'verde',
+      carrera: alumno.carrera || 'No especificada'
+    }));
+  }
+  return [];
+},
+
+asignarAlumnos: async (grupoId, alumnosIds) => {
+  const response = await authFetch(`/admin/grupos/${grupoId}/asignar-alumnos`, {
+    method: 'POST',
+    body: JSON.stringify({ alumnos: alumnosIds })
+  });
+  return response.json();
+},
   
   // ADMIN - EXPEDIENTE 
   getExpedienteAlumno: async (alumnoId) => {
