@@ -49,60 +49,60 @@ const Login = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
 
   // Manejar el envío del formulario con autenticación real
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  console.log('=== FORMULARIO ENVIADO ===');
-  console.log('Email:', email);
-  console.log('Password:', password ? '****' : 'vacío');
-  
-  setError('');
-  setLoading(true);
-
-  // Validación básica antes de enviar
-  if (!email.includes('@')) {
-    setError('Ingresa un correo electrónico válido.');
-    setLoading(false);
-    return;
-  }
-  
-  if (password.length < 4) {
-    setError('La contraseña debe tener al menos 4 caracteres.');
-    setLoading(false);
-    return;
-  }
-
-  console.log('Llamando a api.login...');
-  
-  // Llamar a la API real
-  const result = await api.login(email, password);
-  
-  console.log('Resultado del login:', result);
-  
-  if (result.success) {
-    console.log('Login exitoso, usuario:', result.user);
-    onLogin(result.user);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log('=== FORMULARIO ENVIADO ===');
+    console.log('Email:', email);
+    console.log('Password:', password ? '****' : 'vacío');
     
-    // Redirigir según el rol
-    switch (result.user.rol) {
-      case 'admin':
-        navigate('/admin');
-        break;
-      case 'tutor':
-        navigate('/tutor');
-        break;
-      case 'alumno':
-        navigate('/alumno');
-        break;
-      default:
-        navigate('/');
+    setError('');
+    setLoading(true);
+
+    // Validación básica antes de enviar
+    if (!email.includes('@')) {
+      setError('Ingresa un correo electrónico válido.');
+      setLoading(false);
+      return;
     }
-  } else {
-    console.log('Error en login:', result.error);
-    setError(result.error || 'Error al iniciar sesión. Verifica tus credenciales.');
-  }
-  
-  setLoading(false);
-};
+    
+    if (password.length < 4) {
+      setError('La contraseña debe tener al menos 4 caracteres.');
+      setLoading(false);
+      return;
+    }
+
+    console.log('Llamando a api.login...');
+    
+    // Llamar a la API real
+    const result = await api.login(email, password);
+    
+    console.log('Resultado del login:', result);
+    
+    if (result.success) {
+      console.log('Login exitoso, usuario:', result.user);
+      onLogin(result.user);
+      
+      // Redirigir según el rol
+      switch (result.user.rol) {
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'tutor':
+          navigate('/tutor');
+          break;
+        case 'alumno':
+          navigate('/alumno');
+          break;
+        default:
+          navigate('/');
+      }
+    } else {
+      console.log('Error en login:', result.error);
+      setError(result.error || 'Error al iniciar sesión. Verifica tus credenciales.');
+    }
+    
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen flex bg-base-100">

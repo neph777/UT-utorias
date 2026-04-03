@@ -185,19 +185,72 @@ login: async (email, password) => {
     return response.json();
   },
   
-  // ADMIN - GRUPOS
+// ADMIN - GRUPOS
 getGrupos: async () => {
-  const response = await authFetch('/admin/grupos');
-  const data = await response.json();
-  
-  // Asegurar que cada grupo tenga la propiedad 'alumnos'
-  if (Array.isArray(data)) {
-    return data.map(grupo => ({
-      ...grupo,
-      alumnos: grupo.alumnos || []
-    }));
+  console.log('=== getGrupos llamado ===');
+  try {
+    const response = await authFetch('/admin/grupos');
+    console.log('Response status:', response.status);
+    const data = await response.json();
+    console.log('Datos recibidos:', data);
+    return data;
+  } catch (error) {
+    console.error('Error en getGrupos:', error);
+    throw error;
   }
-  return data;
+},
+
+crearGrupo: async (data) => {
+  console.log('=== crearGrupo llamado ===');
+  console.log('Datos a enviar:', data);
+  try {
+    const response = await authFetch('/admin/grupos', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    console.log('Response status:', response.status);
+    const result = await response.json();
+    console.log('Respuesta:', result);
+    return result;
+  } catch (error) {
+    console.error('Error en crearGrupo:', error);
+    throw error;
+  }
+},
+
+actualizarGrupo: async (id, data) => {
+  console.log('=== actualizarGrupo llamado ===');
+  console.log('ID:', id, 'Datos:', data);
+  try {
+    const response = await authFetch(`/admin/grupos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    console.log('Response status:', response.status);
+    const result = await response.json();
+    console.log('Respuesta:', result);
+    return result;
+  } catch (error) {
+    console.error('Error en actualizarGrupo:', error);
+    throw error;
+  }
+},
+
+eliminarGrupo: async (id) => {
+  console.log('=== eliminarGrupo llamado ===');
+  console.log('ID:', id);
+  try {
+    const response = await authFetch(`/admin/grupos/${id}`, {
+      method: 'DELETE'
+    });
+    console.log('Response status:', response.status);
+    const result = await response.json();
+    console.log('Respuesta:', result);
+    return result;
+  } catch (error) {
+    console.error('Error en eliminarGrupo:', error);
+    throw error;
+  }
 },
 
 getAlumnosDisponibles: async () => {
