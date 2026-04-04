@@ -273,7 +273,7 @@ const SemaforoGeneral = ({ user, onLogout }) => {
                         </td>
                         <td>
                           <button
-                            onClick={() => navigate(`/admin/alumnos/${alumno.id}`)}
+                            onClick={() => navigate(`/admin/alumnos/${alumno.alumno_id || alumno.id}`)}
                             className="btn btn-xs btn-outline btn-primary"
                           >
                             Ver expediente

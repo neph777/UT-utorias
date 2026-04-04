@@ -151,10 +151,10 @@ login: async (email, password) => {
   },
   
   // ADMIN - DASHBOARD 
- getDashboardAdmin: async () => {
-  const response = await authFetch('/admin/dashboard');
-  return response.json();
-},
+  getDashboardAdmin: async () => {
+    const response = await authFetch('/admin/dashboard');
+    return response.json();
+  },
 
   // ADMIN - USUARIOS 
   getUsuarios: async (search = '') => {
@@ -170,7 +170,9 @@ login: async (email, password) => {
           semaforo: usuario.semaforo || 'verde',
           promedio: usuario.promedio || 'N/A',
           grupo_id: usuario.grupo_id || null,
-          ultima_tutoria: usuario.ultima_tutoria || null
+          ultima_tutoria: usuario.ultima_tutoria || null,
+          // Para el expediente, necesitamos el ID del alumno, no del usuario
+          alumno_id: usuario.alumno?.id || null
         }))
       };
     }
@@ -298,7 +300,20 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
   
   // ADMIN - EXPEDIENTE 
   getExpedienteAlumno: async (alumnoId) => {
-    const response = await authFetch(`/admin/alumnos/${alumnoId}/expediente`);
-    return response.json();
-  }
+    console.log('=== getExpedienteAlumno llamado ===');
+    console.log('Alumno ID:', alumnoId);
+    
+    try {
+      const response = await authFetch(`/admin/alumnos/${alumnoId}/expediente`);
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Expediente data:', data);
+      
+      // La API de AlumnoController::expediente devuelve { alumno, historial }
+      return data;
+    } catch (error) {
+      console.error('Error en getExpedienteAlumno:', error);
+      throw error;
+    }
+  },
 };
