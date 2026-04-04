@@ -6,106 +6,197 @@ use App\Http\Controllers\Controller;
 use App\Models\Usuario;
 use App\Models\Alumno;
 use App\Models\Tutor;
-use App\Models\Administrador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class UsuarioController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     */
     public function index(Request $request)
     {
-        $query = Usuario::query();
-        
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where('nombre_completo', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%");
-        }
-        
-        $usuarios = $query->paginate(15);
-        
-        $usuarios->getCollection()->transform(function($usuario) {
-            if ($usuario->rol === 'alumno' && $usuario->alumno) {
-                $usuario->matricula = $usuario->alumno->matricula;
-            } elseif ($usuario->rol === 'tutor' && $usuario->tutor) {
-                $usuario->numero_empleado = $usuario->tutor->numero_empleado;
-            } elseif ($usuario->rol === 'admin' && $usuario->administrador) {
-                $usuario->puesto = $usuario->administrador->puesto;
+        try {
+            $search = $request->get('search');
+            
+            $query = Usuario::query();
+            
+            if ($search) {
+                $query->where('nombre_completo', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
             }
-            return $usuario;
-        });
-        
-        return response()->json($usuarios);
+            
+            $usuarios = $query->paginate(15);
+            
+            return response()->json($usuarios);
+        } catch (\Exception $e) {
+            Log::error('Error en index: ' . $e->getMessage());
+            return response()->json(['message' => 'Error al cargar usuarios'], 500);
+        }
     }
-
+    
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:200',
-            'email' => 'required|email|unique:usuarios,email',
-            'rol' => 'required|in:alumno,tutor,admin',
-            'matricula' => 'required_if:rol,alumno|nullable|string|max:10|unique:alumnos,matricula',
-            'numero_empleado' => 'required_if:rol,tutor|nullable|string|max:20|unique:tutores,numero_empleado',
-            'puesto' => 'required_if:rol,admin|nullable|string|max:100',
-            'carrera' => 'required_if:rol,alumno|nullable|string',
-            'cuatrimestre' => 'required_if:rol,alumno|nullable|integer',
-            'departamento' => 'nullable|string',
-            'especialidad' => 'nullable|string',
-            'nivel' => 'nullable|string'
-        ]);
-        
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        try {
+            $validator = Validator::make($request->all(), [
+                'nombre' => 'required|string|max:255',
+                'email' => 'required|email|unique:usuarios',
+                'rol' => 'required|in:alumno,tutor,admin',
+                'matricula' => 'nullable|string|unique:alumnos,matricula',
+                'carrera' => 'nullable|string',
+                'cuatrimestre' => 'nullable|integer',
+                'numero_empleado' => 'nullable|string',
+                'puesto' => 'nullable|string',
+            ]);
+            
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+            
+            $usuario = Usuario::create([
+                'nombre_completo' => $request->nombre,
+                'email' => $request->email,
+                'password' => Hash::make('password123'),
+                'rol' => $request->rol,
+            ]);
+            
+            if ($request->rol === 'alumno') {
+                Alumno::create([
+                    'usuario_id' => $usuario->id,
+                    'matricula' => $request->matricula ?? '',
+                    'carrera' => $request->carrera ?? '',
+                    'cuatrimestre' => $request->cuatrimestre ?? 1,
+                    'promedio_general' => 0,
+                ]);
+            } elseif ($request->rol === 'tutor') {
+                Tutor::create([
+                    'usuario_id' => $usuario->id,
+                    'numero_empleado' => $request->numero_empleado ?? '',
+                    'especialidad' => $request->puesto ?? '',
+                ]);
+            }
+            
+            return response()->json($usuario, 201);
+            
+        } catch (\Exception $e) {
+            Log::error('Error en store: ' . $e->getMessage());
+            return response()->json(['message' => 'Error al crear usuario: ' . $e->getMessage()], 500);
         }
-        
-        $password = match($request->rol) {
-            'alumno' => 'alumno123',
-            'tutor' => 'tutor123',
-            'admin' => 'admin123',
-            default => 'cambiar123'
-        };
-        
-        $usuario = Usuario::create([
-            'email' => $request->email,
-            'password' => Hash::make($password),
-            'rol' => $request->rol,
-            'nombre_completo' => $request->nombre,
-            'activo' => true
-        ]);
-        
-        // Crear el registro específico según el rol
-        if ($request->rol === 'alumno') {
-            Alumno::create([
-                'usuario_id' => $usuario->id,
-                'matricula' => $request->matricula,
-                'carrera' => $request->carrera,
-                'cuatrimestre' => $request->cuatrimestre,
-                'promedio_general' => 0,
-                'telefono' => $request->telefono ?? null,
-                'semaforo_color' => 'verde'
-            ]);
-        } elseif ($request->rol === 'tutor') {
-            Tutor::create([
-                'usuario_id' => $usuario->id,
-                'numero_empleado' => $request->numero_empleado,
-                'departamento' => $request->departamento ?? '',
-                'especialidad' => $request->especialidad ?? ''
-            ]);
-        } elseif ($request->rol === 'admin') {
-            Administrador::create([
-                'usuario_id' => $usuario->id,
-                'numero_empleado' => $request->numero_empleado ?? '',
-                'puesto' => $request->puesto,
-                'departamento' => $request->departamento ?? '',
-                'nivel' => $request->nivel ?? 'coordinacion'
-            ]);
+    }
+    
+    /**
+     * Display the specified resource.
+     */
+    public function show($id)
+    {
+        try {
+            $usuario = Usuario::with('alumno', 'tutor')->findOrFail($id);
+            return response()->json($usuario);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
         }
-        
-        return response()->json([
-            'message' => 'Usuario creado exitosamente',
-            'usuario' => $usuario,
-            'password' => $password  
-        ], 201);
+    }
+    
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            Log::info('Update usuario llamado', ['id' => $id, 'data' => $request->all()]);
+            
+            $usuario = Usuario::findOrFail($id);
+            
+            $validator = Validator::make($request->all(), [
+                'nombre' => 'sometimes|string|max:255',
+                'email' => 'sometimes|email|unique:usuarios,email,' . $id,
+                'rol' => 'sometimes|in:alumno,tutor,admin',
+                'matricula' => 'nullable|string',
+                'carrera' => 'nullable|string',
+                'cuatrimestre' => 'nullable|integer',
+                'numero_empleado' => 'nullable|string',
+                'puesto' => 'nullable|string',
+            ]);
+            
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+            
+            // Actualizar usuario base
+            if ($request->has('nombre')) {
+                $usuario->nombre_completo = $request->nombre;
+            }
+            if ($request->has('email')) {
+                $usuario->email = $request->email;
+            }
+            if ($request->has('rol')) {
+                $usuario->rol = $request->rol;
+            }
+            $usuario->save();
+            
+            // Actualizar datos específicos según el rol
+            if ($usuario->rol === 'alumno') {
+                $alumno = Alumno::where('usuario_id', $usuario->id)->first();
+                if ($alumno) {
+                    if ($request->has('matricula')) {
+                        $alumno->matricula = $request->matricula;
+                    }
+                    if ($request->has('carrera')) {
+                        $alumno->carrera = $request->carrera;
+                    }
+                    if ($request->has('cuatrimestre')) {
+                        $alumno->cuatrimestre = $request->cuatrimestre;
+                    }
+                    $alumno->save();
+                }
+            } elseif ($usuario->rol === 'tutor') {
+                $tutor = Tutor::where('usuario_id', $usuario->id)->first();
+                if ($tutor) {
+                    if ($request->has('numero_empleado')) {
+                        $tutor->numero_empleado = $request->numero_empleado;
+                    }
+                    if ($request->has('puesto')) {
+                        $tutor->especialidad = $request->puesto;
+                    }
+                    $tutor->save();
+                }
+            }
+            
+            return response()->json($usuario);
+            
+        } catch (\Exception $e) {
+            Log::error('Error en update: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json(['message' => 'Error al actualizar usuario: ' . $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id)
+    {
+        try {
+            $usuario = Usuario::findOrFail($id);
+            
+            if ($usuario->rol === 'alumno') {
+                Alumno::where('usuario_id', $id)->delete();
+            } elseif ($usuario->rol === 'tutor') {
+                Tutor::where('usuario_id', $id)->delete();
+            }
+            
+            $usuario->delete();
+            
+            return response()->json(['message' => 'Usuario eliminado correctamente']);
+            
+        } catch (\Exception $e) {
+            Log::error('Error en destroy: ' . $e->getMessage());
+            return response()->json(['message' => 'Error al eliminar usuario'], 500);
+        }
     }
 }

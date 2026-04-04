@@ -27,6 +27,7 @@ const GestionUsuarios = ({ user, onLogout }) => {
     try {
       setLoading(true);
       const data = await api.getUsuarios(busqueda);
+      // La API devuelve un objeto paginado con { data: [], current_page, ... }
       setLista(data.data || []);
     } catch (err) {
       setError('Error al cargar usuarios');
