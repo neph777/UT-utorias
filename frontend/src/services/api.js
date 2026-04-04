@@ -159,7 +159,23 @@ login: async (email, password) => {
   // ADMIN - USUARIOS 
   getUsuarios: async (search = '') => {
     const response = await authFetch(`/admin/usuarios?search=${search}`);
-    return response.json();
+    const data = await response.json();
+    
+    // Normalizar para incluir campos del semáforo
+    if (data.data && Array.isArray(data.data)) {
+      return {
+        ...data,
+        data: data.data.map(usuario => ({
+          ...usuario,
+          semaforo: usuario.semaforo || 'verde',
+          promedio: usuario.promedio || 'N/A',
+          grupo_id: usuario.grupo_id || null,
+          ultima_tutoria: usuario.ultima_tutoria || null
+        }))
+      };
+    }
+    
+    return data;
   },
   
   crearUsuario: async (data) => {
