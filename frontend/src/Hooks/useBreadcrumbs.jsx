@@ -44,7 +44,7 @@ export const useBreadcrumbs = (user) => {
       crumbs.push({ label: match.label, path: accumulated })
     } else if (accumulated.includes('/admin/grupos/')) {
       crumbs.push({ label: 'Asignación de Alumnos', path: accumulated })
-    } else if (accumulated.includes('/admin/expediente/')) {
+    } else if (accumulated.includes('/admin/alumnos/')) {
       crumbs.push({ label: 'Expediente del Alumno', path: accumulated })
     } else if (accumulated.includes('/tutor/cita/')) {
        crumbs.push({ label: 'Generar Cita', path: accumulated })
