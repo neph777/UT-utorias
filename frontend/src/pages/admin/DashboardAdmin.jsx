@@ -149,6 +149,12 @@ const DashboardAdmin = ({ user, onLogout }) => {
                 >
                    Ver semáforo general
                 </button>
+                <button
+                  onClick={() => navigate('/admin/backup')}
+                  className="btn btn-outline btn-primary w-full justify-start"
+                >
+                  Gestión de Backup
+                </button>
               </div>
             </div>
           </div>
