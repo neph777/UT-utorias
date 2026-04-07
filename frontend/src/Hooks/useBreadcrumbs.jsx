@@ -7,15 +7,14 @@ const ROUTE_MAP = [
   { path: '/alumno/historial',        label: 'Historial' },
   { path: '/alumno/tutorias',         label: 'Mis Tutorías' },
 
-  { path: '/maestro',                 label: 'Mis Tutorías' },
-  { path: '/maestro/grupo',           label: 'Detalle de Grupo' },
-  { path: '/maestro/alumno',          label: 'Perfil de Alumno' },
-  { path: '/maestro/reportes',        label: 'Reportes' },
+  { path: '/tutor',                   label: 'Mis Tutorías' },
+  { path: '/tutor/semaforo',          label: 'Semáforo' },
 
   { path: '/admin',                   label: 'Panel de Control' },
-  { path: '/admin/usuarios',            label: 'Gestión de Usuarios' },
-  { path: '/admin/grupos',           label: 'Gestión de Grupos' },
+  { path: '/admin/usuarios',          label: 'Gestión de Usuarios' },
+  { path: '/admin/grupos',            label: 'Gestión de Grupos' },
   { path: '/admin/semaforo',          label: 'Semaforo General' },
+  { path: '/admin/backup',            label: 'Gestión de Backup'   },
   
 ]
 
@@ -37,6 +36,7 @@ export const useBreadcrumbs = (user) => {
 
   // Construye crumbs acumulando el path segmento a segmento
   let accumulated = ''
+
   for (const segment of segments) {
     accumulated += '/' + segment
     const match = ROUTE_MAP.find(r => r.path === accumulated)
@@ -46,8 +46,11 @@ export const useBreadcrumbs = (user) => {
       crumbs.push({ label: 'Asignación de Alumnos', path: accumulated })
     } else if (accumulated.includes('/admin/expediente/')) {
       crumbs.push({ label: 'Expediente del Alumno', path: accumulated })
-    }
-    
+    } else if (accumulated.includes('/tutor/cita/')) {
+       crumbs.push({ label: 'Generar Cita', path: accumulated })
+    } else if (accumulated.includes('/tutor/tutoria/')) {
+      crumbs.push({ label: 'Registrar Tutoría', path: accumulated })
+    }  
   }
 
   // El último crumb es la página actual (sin link)
