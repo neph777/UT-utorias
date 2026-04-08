@@ -1,45 +1,126 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/layout/Layout'
-
-const BACKUPS_MOCK = [
-  { id: 1, nombre: 'backup_2026_03_01.sql',       fecha: '2026-03-01', hora: '02:00', tamaño: '2.4 MB', tipo: 'automatico', estado: 'completado' },
-  { id: 2, nombre: 'backup_2026_03_15.sql',       fecha: '2026-03-15', hora: '02:00', tamaño: '2.6 MB', tipo: 'automatico', estado: 'completado' },
-  { id: 3, nombre: 'backup_manual_2026_03_20.sql', fecha: '2026-03-20', hora: '10:34', tamaño: '2.7 MB', tipo: 'manual',     estado: 'completado' },
-  { id: 4, nombre: 'backup_2026_04_01.sql',       fecha: '2026-04-01', hora: '02:00', tamaño: '2.9 MB', tipo: 'automatico', estado: 'completado' },
-]
+import { api } from '../../services/api'
 
 const GestionBackup = ({ user, onLogout }) => {
   const navigate = useNavigate()
-  const [backups, setBackups]     = useState(BACKUPS_MOCK)
+  const [backups, setBackups] = useState([])
   const [generando, setGenerando] = useState(false)
-  const [exitoso, setExitoso]     = useState(false)
-  const [config, setConfig]       = useState({
+  const [exitoso, setExitoso] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [config, setConfig] = useState({
     frecuencia: 'diario',
     hora: '02:00',
     retener: '30',
     activo: true,
   })
 
-  const generarBackupManual = async () => {
-    setGenerando(true)
-    await new Promise(r => setTimeout(r, 2000))
-    const nuevo = {
-      id: Date.now(),
-      nombre: `backup_manual_${new Date().toISOString().split('T')[0]}.sql`,
-      fecha: new Date().toISOString().split('T')[0],
-      hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      tamaño: '3.0 MB',
-      tipo: 'manual',
-      estado: 'completado',
+  useEffect(() => {
+    cargarBackups()
+    cargarConfiguracion()
+  }, [])
+
+  const cargarBackups = async () => {
+    setLoading(true)
+    try {
+      const response = await api.getBackups()
+      if (response.success) {
+        setBackups(response.data || [])
+      }
+    } catch (error) {
+      console.error('Error al cargar backups:', error)
+      setError('Error al cargar el historial de backups')
+    } finally {
+      setLoading(false)
     }
-    setBackups([nuevo, ...backups])
-    setGenerando(false)
-    setExitoso(true)
-    setTimeout(() => setExitoso(false), 3000)
   }
 
-  const eliminarBackup = (id) => setBackups(backups.filter(b => b.id !== id))
+  const cargarConfiguracion = async () => {
+    try {
+      const response = await api.getBackupConfig()
+      if (response.success && response.data) {
+        setConfig(response.data)
+      }
+    } catch (error) {
+      console.error('Error al cargar configuración:', error)
+    }
+  }
+
+  const generarBackupManual = async () => {
+    setGenerando(true)
+    setError('')
+    
+    try {
+      const response = await api.crearBackup()
+      
+      if (response.success) {
+        setExitoso(true)
+        setTimeout(() => setExitoso(false), 3000)
+        await cargarBackups() // Recargar la lista
+      } else {
+        setError(response.message || 'Error al generar el backup')
+      }
+    } catch (error) {
+      console.error('Error al generar backup:', error)
+      setError('Error al conectar con el servidor')
+    } finally {
+      setGenerando(false)
+    }
+  }
+
+  const descargarBackup = async (id, nombre) => {
+    try {
+      const response = await api.descargarBackup(id)
+      
+      // Crear blob y descargar
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = nombre
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error al descargar backup:', error)
+      setError('Error al descargar el backup')
+    }
+  }
+
+  const eliminarBackup = async (id) => {
+    if (!confirm('¿Eliminar este backup permanentemente?')) return
+    
+    try {
+      const response = await api.eliminarBackup(id)
+      
+      if (response.success) {
+        await cargarBackups()
+      } else {
+        setError(response.message || 'Error al eliminar el backup')
+      }
+    } catch (error) {
+      console.error('Error al eliminar backup:', error)
+      setError('Error al conectar con el servidor')
+    }
+  }
+
+  const guardarConfiguracion = async () => {
+    try {
+      const response = await api.guardarBackupConfig(config)
+      
+      if (response.success) {
+        alert('Configuración guardada exitosamente')
+      } else {
+        setError(response.message || 'Error al guardar configuración')
+      }
+    } catch (error) {
+      console.error('Error al guardar configuración:', error)
+      setError('Error al conectar con el servidor')
+    }
+  }
 
   return (
     <Layout user={user} onLogout={onLogout}>
@@ -56,11 +137,20 @@ const GestionBackup = ({ user, onLogout }) => {
         </div>
 
         {exitoso && (
-          <div role="alert" className="alert alert-success mb-6">
+          <div className="alert alert-success mb-6">
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <span>Backup generado exitosamente</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="alert alert-error mb-6">
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>{error}</span>
           </div>
         )}
 
@@ -145,7 +235,7 @@ const GestionBackup = ({ user, onLogout }) => {
                 </div>
               </div>
               <div className="card-actions mt-4">
-                <button className="btn btn-outline btn-primary btn-sm w-full">
+                <button onClick={guardarConfiguracion} className="btn btn-outline btn-primary btn-sm w-full">
                   Guardar configuración
                 </button>
               </div>
@@ -161,52 +251,71 @@ const GestionBackup = ({ user, onLogout }) => {
               <h2 className="font-semibold text-gray-800">Historial de backups</h2>
               <span className="badge badge-ghost">{backups.length} respaldos</span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="table table-zebra">
-                <thead>
-                  <tr>
-                    <th>Archivo</th>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                    <th>Tamaño</th>
-                    <th>Tipo</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {backups.map(b => (
-                    <tr key={b.id} className="hover">
-                      <td className="font-mono text-xs text-gray-600">{b.nombre}</td>
-                      <td className="text-sm">{b.fecha}</td>
-                      <td className="text-sm text-gray-500">{b.hora}</td>
-                      <td className="text-sm">{b.tamaño}</td>
-                      <td>
-                        <span className={`badge badge-sm ${b.tipo === 'manual' ? 'badge-info' : 'badge-ghost'}`}>
-                          {b.tipo}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="badge badge-success badge-sm">{b.estado}</span>
-                      </td>
-                      <td>
-                        <div className="flex gap-2">
-                          <button className="btn btn-xs btn-outline btn-primary">
-                            Descargar
-                          </button>
-                          <button
-                            onClick={() => eliminarBackup(b.id)}
-                            className="btn btn-xs btn-outline btn-error"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
+            {loading ? (
+              <div className="text-center py-8">
+                <span className="loading loading-spinner loading-md"></span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="table table-zebra">
+                  <thead>
+                    <tr>
+                      <th>Archivo</th>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Tamaño</th>
+                      <th>Tipo</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {backups.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="text-center py-8 text-gray-500">
+                          No hay backups registrados
+                        </td>
+                      </tr>
+                    ) : (
+                      backups.map(b => (
+                        <tr key={b.id} className="hover">
+                          <td className="font-mono text-xs text-gray-600">{b.nombre}</td>
+                          <td className="text-sm">{b.fecha}</td>
+                          <td className="text-sm text-gray-500">{b.hora}</td>
+                          <td className="text-sm">{b.tamaño || 'N/A'}</td>
+                          <td>
+                            <span className={`badge badge-sm ${b.tipo === 'manual' ? 'badge-info' : 'badge-ghost'}`}>
+                              {b.tipo}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`badge badge-sm ${b.estado === 'completado' ? 'badge-success' : 'badge-error'}`}>
+                              {b.estado}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => descargarBackup(b.id, b.nombre)}
+                                className="btn btn-xs btn-outline btn-primary"
+                              >
+                                Descargar
+                              </button>
+                              <button
+                                onClick={() => eliminarBackup(b.id)}
+                                className="btn btn-xs btn-outline btn-error"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 

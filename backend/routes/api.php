@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\UsuarioController;
 use App\Http\Controllers\Api\Admin\GrupoController;
 use App\Http\Controllers\Api\Admin\AlumnoController;
+use App\Http\Controllers\Api\Admin\BackupController;
 
 // Rutas públicas
 Route::post('/login', [AuthController::class, 'login']);
@@ -32,5 +33,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Expediente de alumno
         Route::get('/alumnos/{id}/expediente', [AlumnoController::class, 'expediente']);
         Route::put('/alumnos/{id}/expediente', [AlumnoController::class, 'update']);
+
+        //Backup
+        Route::apiResource('backups', BackupController::class);
+        Route::get('/backups/config', [BackupController::class, 'getConfig']);
+        Route::post('/backups/config', [BackupController::class, 'saveConfig']);
+        Route::get('/backups/{id}/download', [BackupController::class, 'download']);
     });
 }); // <-- CIERRA EL PRIMER GROUP

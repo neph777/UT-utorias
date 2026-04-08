@@ -331,4 +331,42 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
       throw error;
     }
   },
+
+  // ADMIN - BACKUP
+  getBackups: async () => {
+    const response = await authFetch('/admin/backups');
+    return response.json();
+  },
+
+  crearBackup: async () => {
+    const response = await authFetch('/admin/backups', {
+      method: 'POST'
+    });
+    return response.json();
+  },
+
+  descargarBackup: async (id) => {
+    const response = await authFetch(`/admin/backups/${id}/download`);
+    return response;
+  },
+
+  eliminarBackup: async (id) => {
+    const response = await authFetch(`/admin/backups/${id}`, {
+      method: 'DELETE'
+    });
+    return response.json();
+  },
+
+  getBackupConfig: async () => {
+    const response = await authFetch('/admin/backups/config');
+    return response.json();
+  },
+
+  guardarBackupConfig: async (config) => {
+    const response = await authFetch('/admin/backups/config', {
+      method: 'POST',
+      body: JSON.stringify(config)
+    });
+    return response.json();
+  },
 };
