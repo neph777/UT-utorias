@@ -59,4 +59,18 @@ class AlumnoController extends Controller
             })
         ]);
     }
+
+    public function update(Request $request, $id)
+    {
+        $alumno = Alumno::where('id', $id)->orWhere('usuario_id', $id)->firstOrFail();
+        
+        $alumno->promedio_general = $request->promedio ?? $alumno->promedio_general;
+        $alumno->semaforo_color = $request->semaforo_color ?? $alumno->semaforo_color;
+        $alumno->semaforo_razon = $request->semaforo_razon ?? $alumno->semaforo_razon;
+        $alumno->semaforo_observacion = $request->observaciones ?? $alumno->semaforo_observacion;
+        $alumno->semaforo_manual = true;
+        $alumno->save();
+        
+        return response()->json(['message' => 'Expediente actualizado correctamente', 'alumno' => $alumno]);
+    }
 }

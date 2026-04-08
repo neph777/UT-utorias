@@ -31,5 +31,6 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Expediente de alumno
         Route::get('/alumnos/{id}/expediente', [AlumnoController::class, 'expediente']);
+        Route::put('/alumnos/{id}/expediente', [AlumnoController::class, 'update']);
     });
 }); // <-- CIERRA EL PRIMER GROUP

@@ -316,4 +316,19 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
       throw error;
     }
   },
+  
+  actualizarExpediente: async (alumnoId, data) => {
+    console.log('=== actualizarExpediente llamado ===');
+    console.log('Alumno ID:', alumnoId, 'Datos:', data);
+    try {
+      const response = await authFetch(`/admin/alumnos/${alumnoId}/expediente`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      return response.json();
+    } catch (error) {
+      console.error('Error en actualizarExpediente:', error);
+      throw error;
+    }
+  },
 };
