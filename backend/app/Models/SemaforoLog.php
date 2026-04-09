@@ -24,7 +24,6 @@ class SemaforoLog extends Model
         'origen' => 'string'
     ];
 
-    // Relaciones
     public function alumno()
     {
         return $this->belongsTo(Alumno::class);

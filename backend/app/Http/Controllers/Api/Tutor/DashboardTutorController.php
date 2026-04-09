@@ -182,6 +182,9 @@ public function registrarTutoria(Request $request)
     /**
  * Generar cita (alerta) para un alumno
  */
+/**
+ * Generar cita (alerta) para un alumno
+ */
 public function generarCita(Request $request)
 {
     try {
@@ -196,27 +199,38 @@ public function generarCita(Request $request)
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
         
-        // Obtener el tutor desde la relación del usuario
+        // Obtener el tutor desde el usuario autenticado
         $user = auth()->user();
         
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'Usuario no autenticado'], 401);
         }
         
-        $tutor = $user->tutor;
+        // Buscar el tutor por usuario_id
+        $tutor = \App\Models\Tutor::where('usuario_id', $user->id)->first();
         
         if (!$tutor) {
-            // Intentar obtener el tutor por usuario_id directamente
-            $tutor = \App\Models\Tutor::where('usuario_id', $user->id)->first();
-            
-            if (!$tutor) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'No tienes un perfil de tutor asignado. Contacta al administrador.'
-                ], 404);
-            }
+            return response()->json([
+                'success' => false, 
+                'message' => 'No tienes un perfil de tutor asignado. Contacta al administrador.'
+            ], 404);
         }
         
+        // Verificar que el alumno pertenece a un grupo del tutor
+        $pertenece = \DB::table('grupo_tutor as gt')
+            ->join('grupo_alumno as ga', 'gt.grupo_id', '=', 'ga.grupo_id')
+            ->where('gt.tutor_id', $tutor->id)
+            ->where('ga.alumno_id', $request->alumno_id)
+            ->exists();
+        
+        if (!$pertenece) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'No tienes permiso para generar citas para este alumno'
+            ], 403);
+        }
+        
+        // Crear la alerta/cita
         $alerta = \App\Models\Alerta::create([
             'alumno_id' => $request->alumno_id,
             'tutor_id' => $tutor->id,
@@ -231,9 +245,13 @@ public function generarCita(Request $request)
             'message' => 'Cita generada exitosamente',
             'data' => $alerta
         ]);
+        
     } catch (\Exception $e) {
         \Log::error('Error en generarCita: ' . $e->getMessage());
-        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        return response()->json([
+            'success' => false, 
+            'message' => 'Error al generar la cita: ' . $e->getMessage()
+        ], 500);
     }
 }
     
