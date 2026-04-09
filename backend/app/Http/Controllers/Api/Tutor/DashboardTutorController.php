@@ -179,9 +179,6 @@ public function registrarTutoria(Request $request)
     }
 }
     
-    /**
- * Generar cita (alerta) para un alumno
- */
 /**
  * Generar cita (alerta) para un alumno
  */
@@ -230,7 +227,8 @@ public function generarCita(Request $request)
             ], 403);
         }
         
-        // Crear la alerta/cita
+        // Verificar el nombre de la columna en la tabla alertas
+        // Opción 1: Si la columna se llama 'asunto' (minúscula)
         $alerta = \App\Models\Alerta::create([
             'alumno_id' => $request->alumno_id,
             'tutor_id' => $tutor->id,
@@ -239,6 +237,18 @@ public function generarCita(Request $request)
             'fecha' => $request->fecha,
             'atendida' => false
         ]);
+        
+        // Opción 2: Si la columna se llama 'Asunto' (mayúscula) - descomenta esta y comenta la anterior
+        /*
+        $alerta = \App\Models\Alerta::create([
+            'alumno_id' => $request->alumno_id,
+            'tutor_id' => $tutor->id,
+            'tipo' => 'academica',
+            'Asunto' => $request->asunto,
+            'fecha' => $request->fecha,
+            'atendida' => false
+        ]);
+        */
         
         return response()->json([
             'success' => true,

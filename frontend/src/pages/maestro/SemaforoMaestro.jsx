@@ -1,13 +1,60 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/layout/Layout'
-import { alumnos, grupos } from '../../data/mockData'
+import { api } from '../../services/api'
 
 const ORDEN = { rojo: 0, amarillo: 1, verde: 2 }
 
 const SemaforoMaestro = ({ user, onLogout }) => {
   const navigate = useNavigate()
+  const [alumnos, setAlumnos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [filtroSemaforo, setFiltroSemaforo] = useState('todos')
+
+  useEffect(() => {
+    cargarAlumnos()
+  }, [])
+
+  const cargarAlumnos = async () => {
+    setLoading(true)
+    setError('')
+    
+    try {
+      // Obtener todos los grupos del tutor
+      const gruposRes = await api.getTutorGrupos()
+      
+      if (!gruposRes.success) {
+        setError(gruposRes.message || 'Error al cargar grupos')
+        setLoading(false)
+        return
+      }
+      
+      let todosAlumnos = []
+      
+      // Para cada grupo, obtener sus alumnos
+      for (const grupo of gruposRes.data) {
+        const alumnosRes = await api.getAlumnosByGrupo(grupo.id)
+        
+        if (alumnosRes.success) {
+          // Agregar el nombre del grupo a cada alumno
+          const alumnosConGrupo = alumnosRes.data.alumnos.map(alumno => ({
+            ...alumno,
+            grupoNombre: grupo.clave
+          }))
+          todosAlumnos = [...todosAlumnos, ...alumnosConGrupo]
+        }
+      }
+      
+      setAlumnos(todosAlumnos)
+      
+    } catch (error) {
+      console.error('Error cargando alumnos:', error)
+      setError('Error al cargar los datos del semáforo')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filtrados = alumnos
     .filter(a => filtroSemaforo === 'todos' || a.semaforo === filtroSemaforo)
@@ -20,6 +67,22 @@ const SemaforoMaestro = ({ user, onLogout }) => {
   }
 
   const conteo = (color) => alumnos.filter(a => a.semaforo === color).length
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Sin tutorías'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('es-MX')
+  }
+
+  if (loading) {
+    return (
+      <Layout user={user} onLogout={onLogout}>
+        <div className="p-6 flex justify-center">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <Layout user={user} onLogout={onLogout}>
@@ -34,6 +97,13 @@ const SemaforoMaestro = ({ user, onLogout }) => {
             <p className="text-gray-500 mt-1">Alumnos ordenados por nivel de atención requerida</p>
           </div>
         </div>
+
+        {error && (
+          <div className="alert alert-error mb-4">
+            <span>{error}</span>
+            <button onClick={cargarAlumnos} className="btn btn-sm btn-ghost">Reintentar</button>
+          </div>
+        )}
 
         {/* Tarjetas resumen clickeables */}
         <div className="grid grid-cols-3 gap-4 mb-6">
@@ -52,6 +122,9 @@ const SemaforoMaestro = ({ user, onLogout }) => {
               <div className="stat py-4">
                 <div className="stat-title">{item.label}</div>
                 <div className={`stat-value ${item.text}`}>{conteo(item.color)}</div>
+                <div className="stat-desc text-xs">
+                  {alumnos.length > 0 ? Math.round((conteo(item.color) / alumnos.length) * 100) : 0}% del total
+                </div>
               </div>
             </button>
           ))}
@@ -64,10 +137,10 @@ const SemaforoMaestro = ({ user, onLogout }) => {
             value={filtroSemaforo}
             onChange={e => setFiltroSemaforo(e.target.value)}
           >
-            <option value="todos">Todos los estados</option>
-            <option value="rojo">Prioridad alta</option>
-            <option value="amarillo">Seguimiento</option>
-            <option value="verde">Estable</option>
+            <option value="todos">Todos los estados ({alumnos.length})</option>
+            <option value="rojo">Prioridad alta ({conteo('rojo')})</option>
+            <option value="amarillo">Seguimiento ({conteo('amarillo')})</option>
+            <option value="verde">Estable ({conteo('verde')})</option>
           </select>
           {filtroSemaforo !== 'todos' && (
             <button onClick={() => setFiltroSemaforo('todos')} className="btn btn-sm btn-ghost">
@@ -80,7 +153,7 @@ const SemaforoMaestro = ({ user, onLogout }) => {
         <div className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="table table-zebra">
-              <thead>
+              <thead className="bg-base-200">
                 <tr>
                   <th>Alumno</th>
                   <th>Matrícula</th>
@@ -92,45 +165,58 @@ const SemaforoMaestro = ({ user, onLogout }) => {
                 </tr>
               </thead>
               <tbody>
-                {filtrados.map(a => {
-                  const grupo = grupos.find(g => g.id === a.grupoId)
-                  const estilo = semaforoEstilo[a.semaforo]
-                  return (
-                    <tr key={a.id} className={`hover ${estilo.borde}`}>
-                      <td className="font-medium">{a.nombre}</td>
-                      <td className="font-mono text-sm text-gray-500">{a.matricula}</td>
-                      <td>{grupo?.nombre || '—'}</td>
-                      <td className="font-semibold">{a.promedio}</td>
-                      <td>
-                        <span className={`badge badge-sm ${estilo.badge}`}>
-                          {estilo.texto}
-                        </span>
-                      </td>
-                      <td className="text-sm text-gray-500">{a.ultimaTutoria}</td>
-                      <td>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => navigate(`/tutor/cita/${a.id}`)}
-                            className="btn btn-xs btn-outline btn-primary"
-                          >
-                            Citar
-                          </button>
-                          <button
-                            onClick={() => navigate(`/tutor/tutoria/${a.id}`)}
-                            className="btn btn-xs btn-outline btn-success"
-                          >
-                            Registrar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
+                {filtrados.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="text-center py-8 text-gray-500">
+                      No hay alumnos que coincidan con los filtros seleccionados
+                    </td>
+                  </tr>
+                ) : (
+                  filtrados.map(alumno => {
+                    const estilo = semaforoEstilo[alumno.semaforo] || semaforoEstilo.verde
+                    return (
+                      <tr key={alumno.id} className={`hover ${estilo.borde}`}>
+                        <td className="font-medium">{alumno.nombre}</td>
+                        <td className="font-mono text-sm text-gray-500">{alumno.matricula}</td>
+                        <td className="text-sm">{alumno.grupoNombre || '—'}</td>
+                        <td className="font-semibold">{alumno.promedio || 'N/A'}</td>
+                        <td>
+                          <span className={`badge badge-sm ${estilo.badge}`}>
+                            {estilo.texto}
+                          </span>
+                        </td>
+                        <td className="text-sm text-gray-500">{formatDate(alumno.ultima_tutoria)}</td>
+                        <td>
+                          <div className="flex gap-2">
+                            {/*<button
+                              onClick={() => navigate(`/tutor/cita/${alumno.id}`)}
+                              className="btn btn-xs btn-outline btn-primary"
+                            >
+                              Citar
+                            </button>*/}
+                            <button
+                              onClick={() => navigate(`/tutor/tutoria/${alumno.id}`)}
+                              className="btn btn-xs btn-outline btn-success"
+                            >
+                              Registrar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
+        {/* Resumen */}
+        {alumnos.length > 0 && (
+          <div className="mt-4 text-center text-sm text-gray-500">
+            Mostrando {filtrados.length} de {alumnos.length} alumnos
+          </div>
+        )}
       </div>
     </Layout>
   )

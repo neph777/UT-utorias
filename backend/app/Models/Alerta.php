@@ -9,14 +9,13 @@ class Alerta extends Model
 {
     use HasFactory;
 
-
     protected $table = 'alertas';
     
     protected $fillable = [
         'alumno_id',
         'tutor_id',
         'tipo',
-        'descripcion',
+        'asunto',  // O 'Asunto' si está con mayúscula
         'fecha',
         'atendida'
     ];

@@ -208,13 +208,6 @@ const SemaforoGeneral = ({ user, onLogout }) => {
             </button>
           )}
           
-          <button
-            onClick={cargarDatos}
-            className="btn btn-sm btn-outline ml-auto"
-            disabled={loading}
-          >
-            Refrescar
-          </button>
         </div>
 
         {/* Lista de alumnos */}

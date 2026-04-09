@@ -257,12 +257,12 @@ const DashboardMaestro = ({ user, onLogout }) => {
                       </td>
                       <td>
                         <div className="flex gap-2">
-                          <button
+                          {/*<button
                             onClick={() => navigate(`/tutor/cita/${alumno.usuario_id || alumno.id}`)}
                             className="btn btn-xs btn-outline btn-primary"
                           >
                             Citar
-                          </button>
+                          </button>*/}
                           <button
                             onClick={() => navigate(`/tutor/tutoria/${alumno.id}`)}
                             className="btn btn-xs btn-outline btn-success"
