@@ -22,13 +22,18 @@ class Grupo extends Model
         'activo' => 'boolean'
     ];
 
+    // CORREGIR: Relación con alumnos
     public function alumnos()
     {
-        return $this->belongsToMany(Alumno::class, 'grupo_alumno');
+        return $this->belongsToMany(Alumno::class, 'grupo_alumno', 'grupo_id', 'alumno_id')
+                    ->withTimestamps();
     }
 
+    // CORREGIR: Relación con tutores
     public function tutores()
     {
-        return $this->belongsToMany(Tutor::class, 'grupo_tutor');
+        return $this->belongsToMany(Tutor::class, 'grupo_tutor', 'grupo_id', 'tutor_id')
+                    ->withPivot('activo')
+                    ->withTimestamps();
     }
 }

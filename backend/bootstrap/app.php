@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Console\Scheduling\Schedule;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,30 +12,29 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-->withMiddleware(function (Middleware $middleware): void {
-    // Configurar CORS
-    $middleware->api(prepend: [
-        \Illuminate\Http\Middleware\HandleCors::class,
-    ]);
-    
-    // Registrar middleware de roles
-    $middleware->alias([
-        'role' => \App\Http\Middleware\RoleMiddleware::class,
-    ]);
-    
-    // Configurar Sanctum
-    $middleware->statefulApi();
-    
-    // COMENTA O ELIMINA ESTA LÍNEA:
-    // $middleware->appendToGroup('api', [
-    //     \App\Http\Middleware\LogApiRequests::class, // <-- ELIMINAR ESTO
-    // ]);
-    
-    // EXCLUIR CSRF PARA LAS RUTAS API
-    $middleware->validateCsrfTokens(except: [
-        'api/*',
-    ]);
-})
+    ->withSchedule(function (Schedule $schedule) {
+        // Programar backups aquí si es necesario
+    })
+    ->withMiddleware(function (Middleware $middleware): void {
+        // Configurar CORS - HABILITAR PARA TODAS LAS RUTAS
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+        
+        // Registrar middleware de roles
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
+        
+        // Configurar Sanctum
+        $middleware->statefulApi();
+        
+        // Excluir CSRF para API
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+            'api/login',
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

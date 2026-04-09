@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\UsuarioController;
 use App\Http\Controllers\Api\Admin\GrupoController;
 use App\Http\Controllers\Api\Admin\AlumnoController;
 use App\Http\Controllers\Api\Admin\BackupController;
+use App\Http\Controllers\Api\Tutor\DashboardTutorController;
 
 // Rutas públicas
 Route::post('/login', [AuthController::class, 'login']);
@@ -40,4 +41,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/backups/config', [BackupController::class, 'saveConfig']);
         Route::get('/backups/{id}/download', [BackupController::class, 'download']);
     });
-}); // <-- CIERRA EL PRIMER GROUP
+
+    // Rutas de tutor
+    Route::middleware('role:tutor')->prefix('tutor')->group(function () {
+        Route::get('/dashboard/stats', [DashboardTutorController::class, 'getStats']);
+        Route::get('/grupos', [DashboardTutorController::class, 'getGrupos']);
+        Route::get('/grupos/{id}/alumnos', [DashboardTutorController::class, 'getAlumnosByGrupo']);
+        Route::post('/tutoria', [DashboardTutorController::class, 'registrarTutoria']);
+        Route::post('/cita', [DashboardTutorController::class, 'generarCita']);
+    });
+});

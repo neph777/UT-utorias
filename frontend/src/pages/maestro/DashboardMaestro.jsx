@@ -1,44 +1,92 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/layout/Layout'
-import { alumnos as alumnosMock, grupos as gruposMock, tutorias } from '../../data/mockData'
+import { api } from '../../services/api'
 
 const DashboardMaestro = ({ user, onLogout }) => {
   const navigate = useNavigate()
-  const [selectedGroup, setSelectedGroup] = useState('IDGS-81')
+  const [grupos, setGrupos] = useState([])
+  const [selectedGroupId, setSelectedGroupId] = useState(null)
+  const [alumnos, setAlumnos] = useState([])
+  const [stats, setStats] = useState({
+    total_alumnos: 0,
+    alumnos_rojo: 0,
+    tutorias_realizadas: 0
+  })
+  const [loading, setLoading] = useState(true)
   const [showCitarModal, setShowCitarModal] = useState(false)
   const [showReporteModal, setShowReporteModal] = useState(false)
   const [selectedAlumnosReporte, setSelectedAlumnosReporte] = useState([])
+  const [citaData, setCitaData] = useState({ fecha: '', asunto: '', alumnoId: null })
 
-  const grupos = gruposMock
-  const alumnos = alumnosMock
+  useEffect(() => {
+    cargarDatos()
+  }, [])
 
-  const grupoActual = grupos.find(g => g.nombre === selectedGroup)
-  const alumnosDelGrupo = alumnos.filter(a => grupoActual?.alumnos.includes(a.id))
-  const tutoriasRealizadas = tutorias.length
+  const cargarDatos = async () => {
+    setLoading(true)
+    try {
+      // Cargar estadísticas
+      const statsRes = await api.getTutorStats()
+      if (statsRes.success) {
+        setStats(statsRes.data)
+      }
+
+      // Cargar grupos
+      const gruposRes = await api.getTutorGrupos()
+      if (gruposRes.success && gruposRes.data.length > 0) {
+        setGrupos(gruposRes.data)
+        setSelectedGroupId(gruposRes.data[0].id)
+        await cargarAlumnos(gruposRes.data[0].id)
+      }
+    } catch (error) {
+      console.error('Error cargando datos:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const cargarAlumnos = async (grupoId) => {
+    try {
+      const res = await api.getAlumnosByGrupo(grupoId)
+      if (res.success) {
+        setAlumnos(res.data.alumnos || [])
+      }
+    } catch (error) {
+      console.error('Error cargando alumnos:', error)
+    }
+  }
+
+  const handleGroupChange = (grupoId) => {
+    setSelectedGroupId(grupoId)
+    cargarAlumnos(grupoId)
+    setSelectedAlumnosReporte([])
+  }
 
   const getSemaforoColor = (color) => {
     const colors = {
-      rojo:     'badge badge-error',
+      rojo: 'badge badge-error',
       amarillo: 'badge badge-warning',
-      verde:    'badge badge-success',
+      verde: 'badge badge-success',
     }
     return colors[color] || 'badge badge-ghost'
   }
 
   const getSemaforoTexto = (color) => {
     const textos = {
-      rojo:     'Prioridad Alta',
+      rojo: 'Prioridad Alta',
       amarillo: 'Seguimiento',
-      verde:    'Estable',
+      verde: 'Estable',
     }
     return textos[color] || color
   }
 
   const generarReporteWord = () => {
     const alumnosSeleccionados = selectedAlumnosReporte.length > 0
-      ? alumnosDelGrupo.filter(a => selectedAlumnosReporte.includes(a.id))
-      : alumnosDelGrupo
+      ? alumnos.filter(a => selectedAlumnosReporte.includes(a.id))
+      : alumnos
+
+    const grupoActual = grupos.find(g => g.id === selectedGroupId)
 
     const contenido = `
       UNIVERSIDAD TECNOLÓGICA DE NAYARIT
@@ -46,7 +94,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
 
       REPORTE DE SEGUIMIENTO ACADÉMICO
 
-      Grupo: ${selectedGroup}
+      Grupo: ${grupoActual?.clave || 'N/A'}
       Fecha de generación: ${new Date().toLocaleDateString()}
       Tutor: ${user?.nombre_completo || user?.nombre}
 
@@ -54,7 +102,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
 
       ESTADÍSTICAS GENERALES
 
-      • Total de alumnos en el grupo: ${alumnosDelGrupo.length}
+      • Total de alumnos en el grupo: ${alumnos.length}
       • Alumnos reportados: ${alumnosSeleccionados.length}
       • Alumnos en prioridad alta (rojo): ${alumnosSeleccionados.filter(a => a.semaforo === 'rojo').length}
       • Alumnos en seguimiento (amarillo): ${alumnosSeleccionados.filter(a => a.semaforo === 'amarillo').length}
@@ -69,8 +117,8 @@ const DashboardMaestro = ({ user, onLogout }) => {
       Alumno: ${a.nombre}
       Matrícula: ${a.matricula}
       Promedio: ${a.promedio}
-      Nivel de atención: ${a.semaforo.toUpperCase()}
-      Última tutoría: ${a.ultimaTutoria}
+      Nivel de atención: ${a.semaforo?.toUpperCase() || 'VERDE'}
+      Última tutoría: ${a.ultima_tutoria || 'Sin tutorías'}
       ────────────────────────────────────────────────
       `).join('')}
 
@@ -83,16 +131,21 @@ const DashboardMaestro = ({ user, onLogout }) => {
     const blob = new Blob([contenido], { type: 'application/msword' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = `Reporte_Tutorias_${selectedGroup}_${new Date().toISOString().split('T')[0]}.doc`
+    link.download = `Reporte_Tutorias_${grupoActual?.clave}_${new Date().toISOString().split('T')[0]}.doc`
     link.click()
     URL.revokeObjectURL(link.href)
     setShowReporteModal(false)
     setSelectedAlumnosReporte([])
   }
 
-  const citarAlumnos = () => {
-    alert('Se han enviado citatorios a los alumnos seleccionados.')
-    setShowCitarModal(false)
+  if (loading) {
+    return (
+      <Layout user={user} onLogout={onLogout}>
+        <div className="p-6 flex justify-center">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      </Layout>
+    )
   }
 
   return (
@@ -126,47 +179,46 @@ const DashboardMaestro = ({ user, onLogout }) => {
           <div className="stats shadow bg-base-100 border-l-4 border-primary-500">
             <div className="stat">
               <div className="stat-title">Alumnos en el Grupo</div>
-              <div className="stat-value text-primary-500">{alumnosDelGrupo.length}</div>
+              <div className="stat-value text-primary-500">{alumnos.length}</div>
             </div>
           </div>
           <div className="stats shadow bg-base-100 border-l-4 border-red-500">
             <div className="stat">
               <div className="stat-title">Requieren Atención</div>
               <div className="stat-value text-red-500">
-                {alumnosDelGrupo.filter(a => a.semaforo === 'rojo').length}
+                {alumnos.filter(a => a.semaforo === 'rojo').length}
               </div>
             </div>
           </div>
           <div className="stats shadow bg-base-100 border-l-4 border-green-500">
             <div className="stat">
               <div className="stat-title">Tutorías Realizadas</div>
-              <div className="stat-value text-green-500">{tutoriasRealizadas}</div>
+              <div className="stat-value text-green-500">{stats.tutorias_realizadas}</div>
             </div>
           </div>
         </div>
 
         {/* Selector de grupos */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {grupos.map(grupo => (
-            <button
-              key={grupo.id}
-              onClick={() => {
-                setSelectedGroup(grupo.nombre)
-                setSelectedAlumnosReporte([])
-              }}
-              className={`px-5 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                selectedGroup === grupo.nombre
-                  ? 'bg-primary-500 text-white shadow-md'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-              }`}
-            >
-              {grupo.nombre}
-              <span className="ml-2 text-xs opacity-80">
-                ({alumnos.filter(a => grupo.alumnos.includes(a.id)).length})
-              </span>
-            </button>
-          ))}
-        </div>
+        {grupos.length > 0 && (
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            {grupos.map(grupo => (
+              <button
+                key={grupo.id}
+                onClick={() => handleGroupChange(grupo.id)}
+                className={`px-5 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  selectedGroupId === grupo.id
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                {grupo.clave || grupo.nombre}
+                <span className="ml-2 text-xs opacity-80">
+                  ({grupo.alumnos_count || grupo.alumnos?.length || 0})
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Tabla de alumnos */}
         <div className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
@@ -183,28 +235,30 @@ const DashboardMaestro = ({ user, onLogout }) => {
                 </tr>
               </thead>
               <tbody>
-                {alumnosDelGrupo.length === 0 ? (
+                {alumnos.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="text-center text-gray-400 py-8">
                       No hay alumnos en este grupo
                     </td>
                   </tr>
                 ) : (
-                  alumnosDelGrupo.map(alumno => (
+                  alumnos.map(alumno => (
                     <tr key={alumno.id} className="hover">
                       <td className="font-mono text-sm text-gray-500">{alumno.matricula}</td>
                       <td className="font-medium">{alumno.nombre}</td>
-                      <td className="font-semibold">{alumno.promedio}</td>
+                      <td className="font-semibold">{alumno.promedio || 'N/A'}</td>
                       <td>
                         <span className={getSemaforoColor(alumno.semaforo)}>
                           {getSemaforoTexto(alumno.semaforo)}
                         </span>
                       </td>
-                      <td className="text-sm text-gray-500">{alumno.ultimaTutoria}</td>
+                      <td className="text-sm text-gray-500">
+                        {alumno.ultima_tutoria || 'Sin tutorías'}
+                      </td>
                       <td>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => navigate(`/tutor/cita/${alumno.id}`)}
+                            onClick={() => navigate(`/tutor/cita/${alumno.usuario_id || alumno.id}`)}
                             className="btn btn-xs btn-outline btn-primary"
                           >
                             Citar
@@ -226,41 +280,6 @@ const DashboardMaestro = ({ user, onLogout }) => {
         </div>
       </div>
 
-      {/* Modal citar alumnos */}
-      {showCitarModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Citar Alumnos a Tutoría</h2>
-              <button onClick={() => setShowCitarModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
-            </div>
-            <p className="text-gray-500 text-sm mb-4">Selecciona los alumnos que deseas citar</p>
-            <div className="space-y-2 max-h-96 overflow-y-auto border-t border-gray-100 pt-3">
-              {alumnosDelGrupo.map(alumno => (
-                <label key={alumno.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                  <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" />
-                  <div className="flex-1">
-                    <span className="font-medium text-gray-700">{alumno.nombre}</span>
-                    <span className="text-xs text-gray-400 ml-2">{alumno.matricula}</span>
-                  </div>
-                  <span className={getSemaforoColor(alumno.semaforo)}>
-                    {getSemaforoTexto(alumno.semaforo)}
-                  </span>
-                </label>
-              ))}
-            </div>
-            <div className="mt-6 flex gap-3">
-              <button onClick={citarAlumnos} className="flex-1 py-2 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-colors">
-                Enviar Citatorios
-              </button>
-              <button onClick={() => setShowCitarModal(false)} className="flex-1 py-2 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Modal generar reporte */}
       {showReporteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -274,13 +293,12 @@ const DashboardMaestro = ({ user, onLogout }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
                 <select
                   className="select select-bordered w-full focus:border-primary-500 focus:outline-none"
-                  value={selectedGroup}
-                  onChange={(e) => {
-                    setSelectedGroup(e.target.value)
-                    setSelectedAlumnosReporte([])
-                  }}
+                  value={selectedGroupId || ''}
+                  onChange={(e) => handleGroupChange(parseInt(e.target.value))}
                 >
-                  {grupos.map(g => <option key={g.id}>{g.nombre}</option>)}
+                  {grupos.map(g => (
+                    <option key={g.id} value={g.id}>{g.clave || g.nombre}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -288,7 +306,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
                   Seleccionar alumnos <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
                 <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto p-2">
-                  {alumnosDelGrupo.map(alumno => (
+                  {alumnos.map(alumno => (
                     <label key={alumno.id} className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer">
                       <input
                         type="checkbox"
@@ -307,18 +325,11 @@ const DashboardMaestro = ({ user, onLogout }) => {
                         alumno.semaforo === 'rojo' ? 'badge-error' :
                         alumno.semaforo === 'amarillo' ? 'badge-warning' : 'badge-success'
                       }`}>
-                        {alumno.semaforo}
+                        {alumno.semaforo || 'verde'}
                       </span>
                     </label>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Deja vacío para incluir a todos</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Formato</label>
-                <select className="select select-bordered w-full bg-gray-50 text-gray-500">
-                  <option>Microsoft Word (.doc)</option>
-                </select>
               </div>
             </div>
             <div className="mt-6 flex gap-3">

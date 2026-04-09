@@ -369,4 +369,37 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
     });
     return response.json();
   },
+
+
+  // TUTOR - DASHBOARD
+  getTutorStats: async () => {
+    const response = await authFetch('/tutor/dashboard/stats');
+    return response.json();
+  },
+
+  getTutorGrupos: async () => {
+    const response = await authFetch('/tutor/grupos');
+    return response.json();
+  },
+
+  getAlumnosByGrupo: async (grupoId) => {
+    const response = await authFetch(`/tutor/grupos/${grupoId}/alumnos`);
+    return response.json();
+  },
+
+  registrarTutoria: async (data) => {
+    const response = await authFetch('/tutor/tutoria', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  },
+
+  generarCita: async (data) => {
+    const response = await authFetch('/tutor/cita', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  },
 };

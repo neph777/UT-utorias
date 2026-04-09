@@ -9,7 +9,7 @@ class Tutor extends Model
 {
     use HasFactory;
 
-    protected $table = 'tutores';  
+    protected $table = 'tutores';
 
     protected $fillable = [
         'usuario_id',
@@ -18,10 +18,25 @@ class Tutor extends Model
         'especialidad'
     ];
 
-    // Relaciones
     public function usuario()
     {
         return $this->belongsTo(Usuario::class);
+    }
+
+    // CORREGIR: La relación con grupos debe especificar la tabla pivote
+    public function grupos()
+    {
+        return $this->belongsToMany(Grupo::class, 'grupo_tutor', 'tutor_id', 'grupo_id')
+                    ->withPivot('activo')
+                    ->withTimestamps();
+    }
+
+    // Grupos activos
+    public function gruposActivos()
+    {
+        return $this->belongsToMany(Grupo::class, 'grupo_tutor', 'tutor_id', 'grupo_id')
+                    ->wherePivot('activo', true)
+                    ->withTimestamps();
     }
 
     public function alumnos()
@@ -37,11 +52,6 @@ class Tutor extends Model
     public function alertas()
     {
         return $this->hasMany(Alerta::class);
-    }
-
-    public function grupos()
-    {
-        return $this->belongsToMany(Grupo::class, 'grupo_tutor');
     }
 
     public function semaforoLogs()

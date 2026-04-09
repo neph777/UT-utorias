@@ -47,7 +47,8 @@ class Alumno extends Model
 
     public function grupos()
     {
-        return $this->belongsToMany(Grupo::class, 'grupo_alumno');
+        return $this->belongsToMany(Grupo::class, 'grupo_alumno', 'alumno_id', 'grupo_id')
+                ->withTimestamps();
     }
 
     public function alertas()
