@@ -104,98 +104,138 @@ public function getGrupos()
     }
     
     /**
-     * Registrar una tutoría
-     */
-    public function registrarTutoria(Request $request)
-    {
-        try {
-            $validator = validator($request->all(), [
-                'alumno_id' => 'required|exists:alumnos,id',
-                'fecha' => 'required|date',
-                'tema' => 'required|string',
-                'compromiso' => 'required|string',
-                'observaciones' => 'required|string',
-                'promedio' => 'nullable|numeric'
-            ]);
-            
-            if ($validator->fails()) {
-                return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
-            }
-            
-            $tutor = auth()->user()->tutor;
-            $alumno = Alumno::findOrFail($request->alumno_id);
-            
-            // Actualizar promedio del alumno si se proporcionó
-            if ($request->has('promedio') && $request->promedio) {
-                $alumno->promedio_general = $request->promedio;
-                $alumno->save();
-            }
-            
-            // Registrar tutoría
-            $tutoria = Tutoria::create([
-                'alumno_id' => $request->alumno_id,
-                'tutor_id' => $tutor->id,
-                'fecha' => $request->fecha,
-                'tema' => $request->tema,
-                'compromiso' => $request->compromiso,
-                'observaciones' => $request->observaciones,
-                'estado' => 'completada'
-            ]);
-            
-            // Actualizar última fecha de tutoría del alumno
-            $alumno->ultima_tutoria_fecha = $request->fecha;
-            $alumno->save();
-            
-            // Actualizar semáforo automáticamente
-            $alumno->actualizarSemaforo($tutor->id);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Tutoría registrada exitosamente',
-                'data' => $tutoria
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+ * Registrar una tutoría
+ */
+public function registrarTutoria(Request $request)
+{
+    try {
+        $validator = validator($request->all(), [
+            'alumno_id' => 'required|exists:alumnos,id',
+            'fecha' => 'required|date',
+            'tema' => 'required|string',
+            'compromiso' => 'required|string',
+            'observaciones' => 'required|string',
+            'promedio' => 'nullable|numeric'
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
+        
+        // Obtener el tutor desde el usuario
+        $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Usuario no autenticado'], 401);
+        }
+        
+        $tutor = $user->tutor;
+        
+        if (!$tutor) {
+            $tutor = \App\Models\Tutor::where('usuario_id', $user->id)->first();
+            
+            if (!$tutor) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'No tienes un perfil de tutor asignado'
+                ], 404);
+            }
+        }
+        
+        $alumno = \App\Models\Alumno::findOrFail($request->alumno_id);
+        
+        // Actualizar promedio del alumno si se proporcionó
+        if ($request->has('promedio') && $request->promedio) {
+            $alumno->promedio_general = $request->promedio;
+            $alumno->save();
+        }
+        
+        // Registrar tutoría
+        $tutoria = \App\Models\Tutoria::create([
+            'alumno_id' => $request->alumno_id,
+            'tutor_id' => $tutor->id,
+            'fecha' => $request->fecha,
+            'tema' => $request->tema,
+            'compromiso' => $request->compromiso,
+            'observaciones' => $request->observaciones,
+            'estado' => 'completada'
+        ]);
+        
+        // Actualizar última fecha de tutoría del alumno
+        $alumno->ultima_tutoria_fecha = $request->fecha;
+        $alumno->save();
+        
+        // Actualizar semáforo automáticamente
+        $alumno->actualizarSemaforo($tutor->id);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Tutoría registrada exitosamente',
+            'data' => $tutoria
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error en registrarTutoria: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
+}
     
     /**
-     * Generar cita (alerta) para un alumno
-     */
-    public function generarCita(Request $request)
-    {
-        try {
-            $validator = validator($request->all(), [
-                'alumno_id' => 'required|exists:alumnos,id',
-                'fecha' => 'required|date',
-                'asunto' => 'required|string',
-                'observaciones' => 'nullable|string'
-            ]);
-            
-            if ($validator->fails()) {
-                return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
-            }
-            
-            $tutor = auth()->user()->tutor;
-            
-            $alerta = Alerta::create([
-                'alumno_id' => $request->alumno_id,
-                'tutor_id' => $tutor->id,
-                'tipo' => 'academica',
-                'asunto' => $request->asunto,
-                'fecha' => $request->fecha,
-                'atendida' => false
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Cita generada exitosamente',
-                'data' => $alerta
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+ * Generar cita (alerta) para un alumno
+ */
+public function generarCita(Request $request)
+{
+    try {
+        $validator = validator($request->all(), [
+            'alumno_id' => 'required|exists:alumnos,id',
+            'fecha' => 'required|date',
+            'asunto' => 'required|string',
+            'observaciones' => 'nullable|string'
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
+        
+        // Obtener el tutor desde la relación del usuario
+        $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Usuario no autenticado'], 401);
+        }
+        
+        $tutor = $user->tutor;
+        
+        if (!$tutor) {
+            // Intentar obtener el tutor por usuario_id directamente
+            $tutor = \App\Models\Tutor::where('usuario_id', $user->id)->first();
+            
+            if (!$tutor) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'No tienes un perfil de tutor asignado. Contacta al administrador.'
+                ], 404);
+            }
+        }
+        
+        $alerta = \App\Models\Alerta::create([
+            'alumno_id' => $request->alumno_id,
+            'tutor_id' => $tutor->id,
+            'tipo' => 'academica',
+            'asunto' => $request->asunto,
+            'fecha' => $request->fecha,
+            'atendida' => false
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Cita generada exitosamente',
+            'data' => $alerta
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error en generarCita: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
+}
     
     /**
      * Obtener estadísticas del dashboard
