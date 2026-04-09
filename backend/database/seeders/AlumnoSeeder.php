@@ -50,16 +50,18 @@ class AlumnoSeeder extends Seeder
                 $ultimaTutoria = now()->subDays(10); // Verde: reciente
             }
             
-            $alumno = Alumno::create([
-                'usuario_id' => $alumnoUsuario->id,
-                'matricula' => $matricula,
-                'carrera' => $data['carrera'],
-                'cuatrimestre' => $data['cuatrimestre'],
-                'promedio_general' => $data['promedio'],
-                'telefono' => $data['telefono'],
-                'tutor_actual_id' => $tutores[$index % count($tutores)]->id,
-                'ultima_tutoria_fecha' => $ultimaTutoria
-            ]);
+            $alumno = Alumno::updateOrCreate(
+                ['matricula' => $matricula],
+                [
+                    'usuario_id' => $alumnoUsuario->id,
+                    'carrera' => $data['carrera'],
+                    'cuatrimestre' => $data['cuatrimestre'],
+                    'promedio_general' => $data['promedio'],
+                    'telefono' => $data['telefono'],
+                    'tutor_actual_id' => $tutores[$index % count($tutores)]->id,
+                    'ultima_tutoria_fecha' => $ultimaTutoria
+                ]
+            );
             
             $alumno->actualizarSemaforo();
             

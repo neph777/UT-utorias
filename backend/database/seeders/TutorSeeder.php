@@ -18,12 +18,14 @@ class TutorSeeder extends Seeder
         ];
         
         foreach ($tutores as $index => $tutor) {
-            Tutor::create([
-                'usuario_id' => $tutor->id,
-                'numero_empleado' => $tutoresDatos[$index]['numero_empleado'],
-                'departamento' => $tutoresDatos[$index]['departamento'],
-                'especialidad' => $tutoresDatos[$index]['especialidad']
-            ]);
+            Tutor::updateOrCreate(
+                ['usuario_id' => $tutor->id],
+                [
+                    'numero_empleado' => $tutoresDatos[$index]['numero_empleado'],
+                    'departamento' => $tutoresDatos[$index]['departamento'],
+                    'especialidad' => $tutoresDatos[$index]['especialidad']
+                ]
+            );
         }
     }
 }

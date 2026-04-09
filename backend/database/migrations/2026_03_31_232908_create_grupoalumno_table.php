@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -15,7 +14,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('grupo_id')->constrained('grupos')->onDelete('cascade');
             $table->foreignId('alumno_id')->constrained('alumnos')->onDelete('cascade');
-            $table->timestamps();  
+            $table->timestamps();
             $table->unique(['grupo_id', 'alumno_id']);
         });
     }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('grupoalumno');
+        Schema::dropIfExists('grupo_alumno');
     }
 };

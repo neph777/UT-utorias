@@ -11,13 +11,15 @@ class UsuarioSeeder extends Seeder
     public function run(): void
     {
         // Administrador principal
-        Usuario::create([
-            'email' => 'lupita@utnay.edu.mx',
-            'password' => Hash::make('admin123'),
-            'rol' => 'admin',
-            'nombre_completo' => 'Lupita Rodríguez',
-            'activo' => true
-        ]);
+        Usuario::updateOrCreate(
+            ['email' => 'lupita@utnay.edu.mx'],
+            [
+                'password' => Hash::make('admin123'),
+                'rol' => 'admin',
+                'nombre_completo' => 'Lupita Rodríguez',
+                'activo' => true
+            ]
+        );
 
         // Tutores
         $tutores = [
@@ -32,13 +34,15 @@ class UsuarioSeeder extends Seeder
         ];
 
         foreach ($tutores as $tutor) {
-            Usuario::create([
-                'email' => $tutor['email'],
-                'password' => Hash::make('tutor123'),
-                'rol' => 'tutor',
-                'nombre_completo' => $tutor['nombre'],
-                'activo' => true
-            ]);
+            Usuario::updateOrCreate(
+                ['email' => $tutor['email']],
+                [
+                    'password' => Hash::make('tutor123'),
+                    'rol' => 'tutor',
+                    'nombre_completo' => $tutor['nombre'],
+                    'activo' => true
+                ]
+            );
         }
 
         // Alumnos
@@ -50,13 +54,15 @@ class UsuarioSeeder extends Seeder
         ];
 
         foreach ($alumnos as $alumno) {
-            Usuario::create([
-                'email' => $alumno['email'],
-                'password' => Hash::make('alumno123'),
-                'rol' => 'alumno',
-                'nombre_completo' => $alumno['nombre'],
-                'activo' => true
-            ]);
+            Usuario::updateOrCreate(
+                ['email' => $alumno['email']],
+                [
+                    'password' => Hash::make('alumno123'),
+                    'rol' => 'alumno',
+                    'nombre_completo' => $alumno['nombre'],
+                    'activo' => true
+                ]
+            );
         }
     }
 }

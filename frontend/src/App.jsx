@@ -17,8 +17,8 @@ import GenerarCita from './pages/maestro/GenerarCita';
 import RegistrarTutoria from './pages/maestro/RegistrarTutoria';
 import SemaforoMaestro from './pages/maestro/SemaforoMaestro';
 
-
-// Componente principal que usa useNavigate
+// Alumno
+import DashboardAlumno from './pages/alumno/DashboardAlumno';// Componente principal que usa useNavigate
 function AppContent() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -124,6 +124,9 @@ function AppContent() {
       <Route path="/tutor/cita/:alumnoId"     element={protect('tutor', <GenerarCita user={user} onLogout={handleLogout} />)} />
       <Route path="/tutor/tutoria/:alumnoId"  element={protect('tutor', <RegistrarTutoria user={user} onLogout={handleLogout} />)} />
       <Route path="/tutor/semaforo"           element={protect('tutor', <SemaforoMaestro user={user} onLogout={handleLogout} />)} />
+
+      {/* Alumno */}
+      <Route path="/alumno"                   element={protect('alumno', <DashboardAlumno user={user} onLogout={handleLogout} />)} />
 
       <Route path="/" element={<Navigate to="/login" replace />} />
     </Routes>

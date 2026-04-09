@@ -58,57 +58,56 @@ class GrupoSeeder extends Seeder
                 'generacion' => 30
             ],
         ];
-        
+
         foreach ($grupos as $grupo) {
-            Grupo::create([
-                'clave' => $grupo['clave'],
-                'cuatrimestre' => $grupo['cuatrimestre'],
-                'turno' => $grupo['turno'],
-                'activo' => $grupo['activo']
-            ]);
+            Grupo::updateOrCreate(
+                ['clave' => $grupo['clave']],
+                [
+                    'cuatrimestre' => $grupo['cuatrimestre'],
+                    'turno' => $grupo['turno'],
+                    'activo' => $grupo['activo']
+                ]
+            );
         }
-        
+
         // Asignar alumnos a grupos según su matrícula y cuatrimestre
         $alumnos = Alumno::all();
         $gruposActivos = Grupo::where('activo', true)->get();
-        
+
         foreach ($alumnos as $alumno) {
             $carreraMatricula = explode('-', $alumno->matricula)[0];
-            
+
             $grupo = $gruposActivos->first(function ($g) use ($alumno, $carreraMatricula) {
                 $grupoCarrera = explode('-', $g->clave)[0];
-                return $grupoCarrera === strtoupper($carreraMatricula) 
+                return $grupoCarrera === strtoupper($carreraMatricula)
                     && $g->cuatrimestre == $alumno->cuatrimestre;
             });
-            
+
             if ($grupo) {
-                $grupo->alumnos()->attach($alumno->id);
+                $grupo->alumnos()->syncWithoutDetaching([$alumno->id]);
                 $this->command->info("Alumno {$alumno->matricula} asignado a grupo {$grupo->clave}");
             } else {
                 $this->command->warn("No se encontró grupo para {$alumno->matricula} (Carrera: {$carreraMatricula}, Cuatrimestre: {$alumno->cuatrimestre})");
             }
         }
-        
+
         // Asignar tutores a grupos
         $tutores = Tutor::all();
         $gruposTIC = Grupo::where('clave', 'LIKE', 'TIC-%')->where('activo', true)->get();
         $gruposMEC = Grupo::where('clave', 'LIKE', 'MEC-%')->where('activo', true)->get();
-        
+
         foreach ($gruposTIC as $grupo) {
-            $grupo->tutores()->attach($tutores[0]->id); 
-        
+            if (isset($tutores[0])) {
+                $grupo->tutores()->syncWithoutDetaching([$tutores[0]->id]);
+            }
+        }
+
         foreach ($gruposMEC as $grupo) {
             if (isset($tutores[1])) {
-                $grupo->tutores()->attach($tutores[1]->id);
+                $grupo->tutores()->syncWithoutDetaching([$tutores[1]->id]);
             }
         }
-        
-        foreach ($gruposIND as $grupo) {
-            if (isset($tutores[0])) {
-                $grupo->tutores()->attach($tutores[0]->id);
-            }
-        }
-        
+
         $this->command->info("Grupos creados y asignaciones completadas");
     }
 }

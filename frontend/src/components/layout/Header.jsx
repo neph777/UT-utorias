@@ -54,19 +54,19 @@ const Header = ({ user, onLogout }) => {
                     <p className="text-gray-400 text-xs leading-tight">{rolLabel}</p>
                   </div>
                 </div>
-                
+
                 {/* Botón cambiar contraseña - desktop */}
                 <button
                   onClick={() => setShowPasswordModal(true)}
                   className="btn btn-sm btn-outline text-white border-gray-600 hover:border-primary-500 hover:bg-primary-500/10"
                 >
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
                   Cambiar contraseña
                 </button>
-                
+
                 <div className="w-px h-8 bg-primary-500/20" />
                 <button
                   onClick={handleLogout}
@@ -101,7 +101,7 @@ const Header = ({ user, onLogout }) => {
                   <p className="text-gray-400 text-xs">{rolLabel}</p>
                 </div>
               </div>
-              
+
               {/* Botón cambiar contraseña - móvil */}
               <button
                 onClick={() => {
@@ -111,12 +111,12 @@ const Header = ({ user, onLogout }) => {
                 className="btn btn-sm btn-outline text-white border-gray-600 hover:border-primary-500 w-full"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
                 Cambiar contraseña
               </button>
-              
+
               <button
                 onClick={handleLogout}
                 className="btn btn-sm bg-primary-500 hover:bg-primary-600 text-white border-none w-full"
