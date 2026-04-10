@@ -402,4 +402,16 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
     });
     return response.json();
   },
+
+  // ALUMNO - EXPEDIENTE
+  getMiExpediente: async () => {
+    const response = await authFetch('/alumno/expediente');
+    return response.json();
+  },
+
+  // ALUMNO - DASHBOARD
+  getMiExpediente: async () => {
+    const response = await authFetch('/alumno/expediente');
+    return response.json();
+  },
 };

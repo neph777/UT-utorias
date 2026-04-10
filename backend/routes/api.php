@@ -50,4 +50,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tutoria', [DashboardTutorController::class, 'registrarTutoria']);
         Route::post('/cita', [DashboardTutorController::class, 'generarCita']);
     });
+
+    // Rutas para alumnos 
+    Route::middleware('role:alumno')->prefix('alumno')->group(function () {
+        Route::get('/expediente', [App\Http\Controllers\Api\Alumno\ExpedienteController::class, 'show']);
+    });
 });
