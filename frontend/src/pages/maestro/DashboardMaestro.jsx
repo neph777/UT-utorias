@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/layout/Layout'
 import { api } from '../../services/api'
+import { useLanguage } from '../../context/LanguageContext'
 
 const DashboardMaestro = ({ user, onLogout }) => {
   const navigate = useNavigate()
+  const { t } = useLanguage()
+  const L = t.dashboardMaestro
   const [grupos, setGrupos] = useState([])
   const [selectedGroupId, setSelectedGroupId] = useState(null)
   const [alumnos, setAlumnos] = useState([])
@@ -74,9 +77,9 @@ const DashboardMaestro = ({ user, onLogout }) => {
 
   const getSemaforoTexto = (color) => {
     const textos = {
-      rojo: 'Prioridad Alta',
-      amarillo: 'Seguimiento',
-      verde: 'Estable',
+      rojo: L.semaforo.rojo,
+      amarillo: L.semaforo.amarillo,
+      verde: L.semaforo.verde,
     }
     return textos[color] || color
   }
@@ -155,8 +158,8 @@ const DashboardMaestro = ({ user, onLogout }) => {
         {/* Encabezado */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Mis Tutorías</h1>
-            <p className="text-gray-500 mt-1">Gestiona el seguimiento académico de tus alumnos</p>
+            <h1 className="text-3xl font-bold text-gray-800">{L.title}</h1>
+            <p className="text-gray-500 mt-1">{L.subtitle}</p>
           </div>
           <div className="flex gap-3 flex-wrap">
             <button
@@ -169,7 +172,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
               onClick={() => setShowReporteModal(true)}
               className="btn bg-primary-500 hover:bg-primary-600 text-white border-none"
             >
-              Generar Reporte
+              {L.generateReport}
             </button>
           </div>
         </div>
@@ -178,13 +181,13 @@ const DashboardMaestro = ({ user, onLogout }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="stats shadow bg-base-100 border-l-4 border-primary-500">
             <div className="stat">
-              <div className="stat-title">Alumnos en el Grupo</div>
+              <div className="stat-title">{L.studentsInGroup}</div>
               <div className="stat-value text-primary-500">{alumnos.length}</div>
             </div>
           </div>
           <div className="stats shadow bg-base-100 border-l-4 border-red-500">
             <div className="stat">
-              <div className="stat-title">Requieren Atención</div>
+              <div className="stat-title">{L.requireAttention}</div>
               <div className="stat-value text-red-500">
                 {alumnos.filter(a => a.semaforo === 'rojo').length}
               </div>
@@ -192,7 +195,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
           </div>
           <div className="stats shadow bg-base-100 border-l-4 border-green-500">
             <div className="stat">
-              <div className="stat-title">Tutorías Realizadas</div>
+              <div className="stat-title">{L.tutoriasCompleted}</div>
               <div className="stat-value text-green-500">{stats.tutorias_realizadas}</div>
             </div>
           </div>
@@ -226,19 +229,19 @@ const DashboardMaestro = ({ user, onLogout }) => {
             <table className="table table-zebra">
               <thead>
                 <tr>
-                  <th>Matrícula</th>
-                  <th>Nombre</th>
-                  <th>Promedio</th>
-                  <th>Nivel de Atención</th>
-                  <th>Última Tutoría</th>
-                  <th>Acciones</th>
+                  <th>{L.table.matricula}</th>
+                  <th>{L.table.name}</th>
+                  <th>{L.table.average}</th>
+                  <th>{L.table.status}</th>
+                  <th>{L.table.lastTutoria}</th>
+                  <th>{L.table.actions}</th>
                 </tr>
               </thead>
               <tbody>
                 {alumnos.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="text-center text-gray-400 py-8">
-                      No hay alumnos en este grupo
+                      {L.noStudents}
                     </td>
                   </tr>
                 ) : (
@@ -253,7 +256,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
                         </span>
                       </td>
                       <td className="text-sm text-gray-500">
-                        {alumno.ultima_tutoria || 'Sin tutorías'}
+                        {alumno.ultima_tutoria || L.table.noTutorias}
                       </td>
                       <td>
                         <div className="flex gap-2">
@@ -267,7 +270,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
                             onClick={() => navigate(`/tutor/tutoria/${alumno.id}`)}
                             className="btn btn-xs btn-outline btn-success"
                           >
-                            Registrar
+                            {L.actions.tutoria}
                           </button>
                         </div>
                       </td>
@@ -285,12 +288,12 @@ const DashboardMaestro = ({ user, onLogout }) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Generar Reporte</h2>
+              <h2 className="text-xl font-bold text-gray-800">{L.generateReport}</h2>
               <button onClick={() => setShowReporteModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{L.group}</label>
                 <select
                   className="select select-bordered w-full focus:border-primary-500 focus:outline-none"
                   value={selectedGroupId || ''}
@@ -303,7 +306,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Seleccionar alumnos <span className="text-gray-400 font-normal">(opcional)</span>
+                  {L.selectStudents} <span className="text-gray-400 font-normal">({L.optional})</span>
                 </label>
                 <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto p-2">
                   {alumnos.map(alumno => (
@@ -334,10 +337,10 @@ const DashboardMaestro = ({ user, onLogout }) => {
             </div>
             <div className="mt-6 flex gap-3">
               <button onClick={generarReporteWord} className="flex-1 py-2 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-colors">
-                Descargar Reporte
+                {L.download}
               </button>
               <button onClick={() => setShowReporteModal(false)} className="flex-1 py-2 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                Cancelar
+                {L.cancel}
               </button>
             </div>
           </div>

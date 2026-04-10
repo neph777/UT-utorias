@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/layout/Layout'
 import { api } from '../../services/api'
+import { useLanguage } from '../../context/LanguageContext'
 
 const ORDEN = { rojo: 0, amarillo: 1, verde: 2 }
 
 const SemaforoGeneral = ({ user, onLogout }) => {
   const navigate = useNavigate()
+  const { t } = useLanguage()
+  const L = t.semaforo
   
   const [alumnos, setAlumnos] = useState([])
   const [grupos, setGrupos] = useState([])
@@ -84,9 +87,9 @@ const SemaforoGeneral = ({ user, onLogout }) => {
   }
 
   const semaforoEstilo = {
-    rojo:     { badge: 'badge-error',   fila: 'border-l-4 border-red-400',    texto: 'Prioridad alta' },
-    amarillo: { badge: 'badge-warning', fila: 'border-l-4 border-yellow-400', texto: 'Seguimiento' },
-    verde:    { badge: 'badge-success', fila: 'border-l-4 border-green-400',  texto: 'Estable' },
+    rojo:     { badge: 'badge-error',   fila: 'border-l-4 border-red-400',    texto: L.rojo },
+    amarillo: { badge: 'badge-warning', fila: 'border-l-4 border-yellow-400', texto: L.amarillo },
+    verde:    { badge: 'badge-success', fila: 'border-l-4 border-green-400',  texto: L.verde },
   }
 
   const conteo = (color) => {
@@ -123,11 +126,11 @@ const SemaforoGeneral = ({ user, onLogout }) => {
       <div className="p-6 max-w-7xl mx-auto">
 
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Semáforo General</h1>
+          <h1 className="text-3xl font-bold text-gray-800">{L.title}</h1>
           <p className="text-gray-500 mt-1">
-            Alumnos ordenados por nivel de atención requerida
+            {L.subtitle}
             <span className="ml-2 text-xs text-gray-400">
-              (Total: {alumnos.length} alumnos)
+              (Total: {alumnos.length} {t.common.loading === 'Cargando...' ? 'alumnos' : 'students'})
             </span>
           </p>
         </div>
@@ -145,9 +148,9 @@ const SemaforoGeneral = ({ user, onLogout }) => {
         {/* Resumen rápido */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
-            { color: 'rojo',     label: 'Prioridad alta',  badge: 'border-red-500',    text: 'text-red-500' },
-            { color: 'amarillo', label: 'Seguimiento',     badge: 'border-yellow-500', text: 'text-yellow-500' },
-            { color: 'verde',    label: 'Estable',         badge: 'border-green-500',  text: 'text-green-500' },
+            { color: 'rojo',     label: L.rojo,     badge: 'border-red-500',    text: 'text-red-500' },
+            { color: 'amarillo', label: L.amarillo, badge: 'border-yellow-500', text: 'text-yellow-500' },
+            { color: 'verde',    label: L.verde,    badge: 'border-green-500',  text: 'text-green-500' },
           ].map(item => (
             <button
               key={item.color}
@@ -176,7 +179,7 @@ const SemaforoGeneral = ({ user, onLogout }) => {
               value={filtroGrupo}
               onChange={e => setFiltroGrupo(e.target.value)}
             >
-              <option value="todos">Todos los grupos</option>
+              <option value="todos">{t.common.loading === 'Cargando...' ? 'Todos los grupos' : 'All groups'}</option>
               {grupos.map(g => (
                 <option key={g.id} value={g.id}>
                   {g.clave || g.nombre}
@@ -192,10 +195,10 @@ const SemaforoGeneral = ({ user, onLogout }) => {
               value={filtroSemaforo}
               onChange={e => setFiltroSemaforo(e.target.value)}
             >
-              <option value="todos">Todos los estados</option>
-              <option value="rojo"> Prioridad alta</option>
-              <option value="amarillo"> Seguimiento</option>
-              <option value="verde"> Estable</option>
+              <option value="todos">{t.common.loading === 'Cargando...' ? 'Todos los estados' : 'All statuses'}</option>
+              <option value="rojo"> {L.rojo}</option>
+              <option value="amarillo"> {L.amarillo}</option>
+              <option value="verde"> {L.verde}</option>
             </select>
           </div>
           
@@ -204,7 +207,7 @@ const SemaforoGeneral = ({ user, onLogout }) => {
               onClick={() => { setFiltroGrupo('todos'); setFiltroSemaforo('todos') }}
               className="btn btn-sm btn-ghost"
             >
-              Limpiar filtros
+              {t.common.loading === 'Cargando...' ? 'Limpiar filtros' : 'Clear filters'}
             </button>
           )}
           
@@ -216,13 +219,13 @@ const SemaforoGeneral = ({ user, onLogout }) => {
             <table className="table table-zebra">
               <thead className="bg-base-200">
                 <tr>
-                  <th>Alumno</th>
-                  <th>Matrícula / Correo</th>
-                  <th>Grupo</th>
-                  <th>Promedio</th>
-                  <th>Estado</th>
-                  <th>Última tutoría</th>
-                  <th>Acciones</th>
+                  <th>{L.table.student}</th>
+                  <th>{t.common.loading === 'Cargando...' ? 'Matrícula / Correo' : 'ID / Email'}</th>
+                  <th>{L.table.group}</th>
+                  <th>{L.table.average}</th>
+                  <th>{L.table.status}</th>
+                  <th>{t.common.loading === 'Cargando...' ? 'Última tutoría' : 'Last session'}</th>
+                  <th>{L.table.actions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,7 +272,7 @@ const SemaforoGeneral = ({ user, onLogout }) => {
                             onClick={() => navigate(`/admin/alumnos/${alumno.alumno_id || alumno.id}`)}
                             className="btn btn-xs btn-outline btn-primary"
                           >
-                            Ver expediente
+                            {L.viewExpediente}
                           </button>
                         </td>
                       </tr>
@@ -284,7 +287,7 @@ const SemaforoGeneral = ({ user, onLogout }) => {
         {/* Resumen de filtros */}
         {alumnosFiltrados.length > 0 && (
           <div className="mt-4 text-sm text-gray-500 text-center">
-            Mostrando {alumnosFiltrados.length} de {alumnos.length} alumnos
+            {t.common.loading === 'Cargando...' ? `Mostrando ${alumnosFiltrados.length} de ${alumnos.length} alumnos` : `Showing ${alumnosFiltrados.length} of ${alumnos.length} students`}
           </div>
         )}
 

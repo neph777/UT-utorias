@@ -1,8 +1,12 @@
 import Layout from '../../components/layout/Layout'
+import { useLanguage } from '../../context/LanguageContext'
 
 const DashboardAlumno = ({ user, onLogout }) => {
-  const tutorías = [
-    { fecha: '10/03/2026', tipo: 'Individual', compromisos: 'Entregar tarea de matemáticas', estado: 'cumplido' },
+  const { t } = useLanguage()
+  const L = t.dashboardAlumno
+
+  const tutorias = [
+    { fecha: '10/03/2026', tipo: L.table.type === 'Tipo' ? 'Individual' : 'Individual', compromisos: 'Entregar tarea de matemáticas', estado: 'cumplido' },
     { fecha: '01/03/2026', tipo: 'Grupal', compromisos: 'Asistir a asesoría', estado: 'cumplido' },
     { fecha: '20/02/2026', tipo: 'Individual', compromisos: 'Estudiar para examen parcial', estado: 'pendiente' },
   ]
@@ -18,32 +22,32 @@ const DashboardAlumno = ({ user, onLogout }) => {
         {/* Encabezado */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">
-            Bienvenido, {user?.nombre?.split(' ')[0] || 'Alumno'}
+            {L.welcome}, {user?.nombre_completo?.split(' ')[0] || user?.nombre?.split(' ')[0] || 'Alumno'}
           </h1>
-          <p className="text-gray-500 mt-1">Aquí puedes consultar tu historial y próximas tutorías</p>
+          <p className="text-gray-500 mt-1">{L.subtitle}</p>
         </div>
 
         {/* Tarjetas de resumen */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="card bg-white shadow-sm border-l-4 border-primary-500">
             <div className="card-body p-6">
-              <p className="text-sm text-gray-500 mb-1">Mi Promedio</p>
+              <p className="text-sm text-gray-500 mb-1">{L.average}</p>
               <p className="text-4xl font-bold text-primary-500">85</p>
-              <p className="text-xs text-gray-400 mt-1">Ciclo actual</p>
+              <p className="text-xs text-gray-400 mt-1">{L.cycle}</p>
             </div>
           </div>
           <div className="card bg-white shadow-sm border-l-4 border-green-500">
             <div className="card-body p-6">
-              <p className="text-sm text-gray-500 mb-1">Tutorías Recibidas</p>
+              <p className="text-sm text-gray-500 mb-1">{L.tutoriasReceived}</p>
               <p className="text-4xl font-bold text-green-500">4</p>
-              <p className="text-xs text-gray-400 mt-1">Este semestre</p>
+              <p className="text-xs text-gray-400 mt-1">{L.semester}</p>
             </div>
           </div>
           <div className="card bg-white shadow-sm border-l-4 border-yellow-500">
             <div className="card-body p-6">
-              <p className="text-sm text-gray-500 mb-1">Próxima Tutoría</p>
+              <p className="text-sm text-gray-500 mb-1">{L.nextTutoria}</p>
               <p className="text-3xl font-bold text-yellow-500">25 Mar</p>
-              <p className="text-xs text-gray-400 mt-1">10:00 AM — Individual</p>
+              <p className="text-xs text-gray-400 mt-1">{L.nextTutoriaTime}</p>
             </div>
           </div>
         </div>
@@ -51,27 +55,27 @@ const DashboardAlumno = ({ user, onLogout }) => {
         {/* Historial */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">Historial de Tutorías</h2>
+            <h2 className="text-lg font-semibold text-gray-800">{L.historyTitle}</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Compromisos</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{L.table.date}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{L.table.type}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{L.table.commitments}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{L.table.status}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {tutorías.map((t, i) => (
+                {tutorias.map((tutoria, i) => (
                   <tr key={i} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm text-gray-500 font-mono">{t.fecha}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{t.tipo}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{t.compromisos}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 font-mono">{tutoria.fecha}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{tutoria.tipo}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{tutoria.compromisos}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${estadoBadge(t.estado)}`}>
-                        {t.estado === 'cumplido' ? 'Cumplido' : 'Pendiente'}
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${estadoBadge(tutoria.estado)}`}>
+                        {tutoria.estado === 'cumplido' ? L.table.fulfilled : L.table.pending}
                       </span>
                     </td>
                   </tr>

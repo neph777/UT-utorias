@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/layout/Layout'
 import { api } from '../../services/api'
+import { useLanguage } from '../../context/LanguageContext'
 
 const ORDEN = { rojo: 0, amarillo: 1, verde: 2 }
 
 const SemaforoMaestro = ({ user, onLogout }) => {
   const navigate = useNavigate()
+  const { t } = useLanguage()
+  const L = t.semaforoMaestro
+  const Ls = t.semaforo
   const [alumnos, setAlumnos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -61,9 +65,9 @@ const SemaforoMaestro = ({ user, onLogout }) => {
     .sort((a, b) => ORDEN[a.semaforo] - ORDEN[b.semaforo])
 
   const semaforoEstilo = {
-    rojo:     { badge: 'badge-error',   borde: 'border-l-4 border-red-400',    texto: 'Prioridad alta'  },
-    amarillo: { badge: 'badge-warning', borde: 'border-l-4 border-yellow-400', texto: 'Seguimiento'     },
-    verde:    { badge: 'badge-success', borde: 'border-l-4 border-green-400',  texto: 'Estable'         },
+    rojo:     { badge: 'badge-error',   borde: 'border-l-4 border-red-400',    texto: Ls.rojo    },
+    amarillo: { badge: 'badge-warning', borde: 'border-l-4 border-yellow-400', texto: Ls.amarillo},
+    verde:    { badge: 'badge-success', borde: 'border-l-4 border-green-400',  texto: Ls.verde   },
   }
 
   const conteo = (color) => alumnos.filter(a => a.semaforo === color).length
@@ -93,8 +97,8 @@ const SemaforoMaestro = ({ user, onLogout }) => {
             ← Volver
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Semáforo de Alumnos</h1>
-            <p className="text-gray-500 mt-1">Alumnos ordenados por nivel de atención requerida</p>
+            <h1 className="text-3xl font-bold text-gray-800">{L.title}</h1>
+            <p className="text-gray-500 mt-1">{L.subtitle}</p>
           </div>
         </div>
 
@@ -108,9 +112,9 @@ const SemaforoMaestro = ({ user, onLogout }) => {
         {/* Tarjetas resumen clickeables */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           {[
-            { color: 'rojo',     label: 'Prioridad alta', border: 'border-red-500',    text: 'text-red-500'    },
-            { color: 'amarillo', label: 'Seguimiento',    border: 'border-yellow-500', text: 'text-yellow-500' },
-            { color: 'verde',    label: 'Estable',        border: 'border-green-500',  text: 'text-green-500'  },
+            { color: 'rojo',     label: Ls.rojo,     border: 'border-red-500',    text: 'text-red-500'    },
+            { color: 'amarillo', label: Ls.amarillo, border: 'border-yellow-500', text: 'text-yellow-500' },
+            { color: 'verde',    label: Ls.verde,    border: 'border-green-500',  text: 'text-green-500'  },
           ].map(item => (
             <button
               key={item.color}
@@ -137,10 +141,10 @@ const SemaforoMaestro = ({ user, onLogout }) => {
             value={filtroSemaforo}
             onChange={e => setFiltroSemaforo(e.target.value)}
           >
-            <option value="todos">Todos los estados ({alumnos.length})</option>
-            <option value="rojo">Prioridad alta ({conteo('rojo')})</option>
-            <option value="amarillo">Seguimiento ({conteo('amarillo')})</option>
-            <option value="verde">Estable ({conteo('verde')})</option>
+            <option value="todos">{L.all} ({alumnos.length})</option>
+            <option value="rojo">{Ls.rojo} ({conteo('rojo')})</option>
+            <option value="amarillo">{Ls.amarillo} ({conteo('amarillo')})</option>
+            <option value="verde">{Ls.verde} ({conteo('verde')})</option>
           </select>
           {filtroSemaforo !== 'todos' && (
             <button onClick={() => setFiltroSemaforo('todos')} className="btn btn-sm btn-ghost">
@@ -155,13 +159,13 @@ const SemaforoMaestro = ({ user, onLogout }) => {
             <table className="table table-zebra">
               <thead className="bg-base-200">
                 <tr>
-                  <th>Alumno</th>
-                  <th>Matrícula</th>
-                  <th>Grupo</th>
-                  <th>Promedio</th>
-                  <th>Estado</th>
-                  <th>Última tutoría</th>
-                  <th>Acciones</th>
+                  <th>{t.common.loading === 'Cargando...' ? 'Alumno' : 'Student'}</th>
+                  <th>{t.dashboardMaestro.table.matricula}</th>
+                  <th>{t.semaforo.table.group}</th>
+                  <th>{t.dashboardMaestro.table.average}</th>
+                  <th>{t.dashboardMaestro.table.status}</th>
+                  <th>{t.dashboardMaestro.table.lastTutoria}</th>
+                  <th>{t.dashboardMaestro.table.actions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,7 +202,7 @@ const SemaforoMaestro = ({ user, onLogout }) => {
                               onClick={() => navigate(`/tutor/tutoria/${alumno.id}`)}
                               className="btn btn-xs btn-outline btn-success"
                             >
-                              Registrar
+                              {t.dashboardMaestro.actions.tutoria}
                             </button>
                           </div>
                         </td>
@@ -214,7 +218,7 @@ const SemaforoMaestro = ({ user, onLogout }) => {
         {/* Resumen */}
         {alumnos.length > 0 && (
           <div className="mt-4 text-center text-sm text-gray-500">
-            Mostrando {filtrados.length} de {alumnos.length} alumnos
+            {t.common.loading === 'Cargando...' ? `Mostrando ${filtrados.length} de ${alumnos.length} alumnos` : `Showing ${filtrados.length} of ${alumnos.length} students`}
           </div>
         )}
       </div>

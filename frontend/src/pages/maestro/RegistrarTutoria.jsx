@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Layout from '../../components/layout/Layout'
 import { api } from '../../services/api'
+import { useLanguage } from '../../context/LanguageContext'
 
 const RegistrarTutoria = ({ user, onLogout }) => {
   const { alumnoId } = useParams()
   const navigate = useNavigate()
+  const { t } = useLanguage()
+  const L = t.registrarTutoria
   
   const [alumno, setAlumno] = useState(null)
   const [historial, setHistorial] = useState([])
@@ -90,9 +93,9 @@ const RegistrarTutoria = ({ user, onLogout }) => {
 
   const getSemaforoTexto = (semaforo) => {
     const textos = {
-      rojo: 'Prioridad Alta',
-      amarillo: 'Seguimiento',
-      verde: 'Estable'
+      rojo: t.semaforo.rojo,
+      amarillo: t.semaforo.amarillo,
+      verde: t.semaforo.verde
     }
     return textos[semaforo] || semaforo
   }
@@ -137,8 +140,8 @@ const RegistrarTutoria = ({ user, onLogout }) => {
             ← Volver
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Registrar Tutoría</h1>
-            <p className="text-gray-500 mt-1">Documenta la sesión de tutoría del alumno</p>
+            <h1 className="text-3xl font-bold text-gray-800">{L.title}</h1>
+            <p className="text-gray-500 mt-1">{L.subtitle}</p>
           </div>
         </div>
 
@@ -212,7 +215,7 @@ const RegistrarTutoria = ({ user, onLogout }) => {
                   <>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{L.fields.date}</label>
                         <input
                           type="date"
                           className="input input-bordered w-full focus:border-primary-500 focus:outline-none"
@@ -221,7 +224,7 @@ const RegistrarTutoria = ({ user, onLogout }) => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Promedio en esta sesión</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t.common.loading === 'Cargando...' ? 'Promedio en esta sesión' : 'Average in this session'}</label>
                         <input
                           type="number"
                           step="0.01"
@@ -237,12 +240,12 @@ const RegistrarTutoria = ({ user, onLogout }) => {
 
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tema de la tutoría <span className="text-red-400">*</span>
+                        {L.fields.topic} <span className="text-red-400">*</span>
                       </label>
                       <input
                         type="text"
                         className="input input-bordered w-full focus:border-primary-500 focus:outline-none"
-                        placeholder="Ej: Repaso de matemáticas, orientación vocacional..."
+                        placeholder={L.fields.topicPlaceholder}
                         value={form.tema}
                         onChange={e => setForm({ ...form, tema: e.target.value })}
                       />
@@ -250,12 +253,12 @@ const RegistrarTutoria = ({ user, onLogout }) => {
 
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Compromisos del alumno <span className="text-red-400">*</span>
+                        {L.fields.commitment} <span className="text-red-400">*</span>
                       </label>
                       <textarea
                         rows="2"
                         className="textarea textarea-bordered w-full focus:border-primary-500 focus:outline-none"
-                        placeholder="Ej: Entregar tarea pendiente, asistir a asesoría..."
+                        placeholder={L.fields.commitmentPlaceholder}
                         value={form.compromiso}
                         onChange={e => setForm({ ...form, compromiso: e.target.value })}
                       />
@@ -263,12 +266,12 @@ const RegistrarTutoria = ({ user, onLogout }) => {
 
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Observaciones del tutor <span className="text-red-400">*</span>
+                        {L.fields.observations} <span className="text-red-400">*</span>
                       </label>
                       <textarea
                         rows="2"
                         className="textarea textarea-bordered w-full focus:border-primary-500 focus:outline-none"
-                        placeholder="Aspectos relevantes de la sesión..."
+                        placeholder={L.fields.observationsPlaceholder}
                         value={form.observaciones}
                         onChange={e => setForm({ ...form, observaciones: e.target.value })}
                       />
@@ -286,11 +289,9 @@ const RegistrarTutoria = ({ user, onLogout }) => {
                         disabled={!form.tema || !form.compromiso || !form.observaciones || saving}
                         className="btn bg-primary-500 hover:bg-primary-600 text-white border-none flex-1 disabled:opacity-50"
                       >
-                        {saving ? 'Guardando...' : 'Guardar registro'}
+                        {saving ? L.saving : L.save}
                       </button>
-                      <button onClick={() => navigate('/tutor')} className="btn btn-outline flex-1">
-                        Cancelar
-                      </button>
+                      <button onClick={() => navigate('/tutor')} className="btn btn-outline flex-1">{t.common.cancel}</button>
                     </div>
                   </>
                 )}

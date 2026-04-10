@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import { api } from '../../services/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 const ROLES = [
   { value: 'alumno', label: 'Alumno' },
@@ -12,6 +13,8 @@ const vacioForm = { nombre: '', email: '', rol: 'alumno', matricula: '', carrera
 
 const GestionUsuarios = ({ user, onLogout }) => {
   const [lista, setLista] = useState([]);
+  const { t } = useLanguage();
+  const L = t.gestionUsuarios;
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(vacioForm);
   const [editandoId, setEditandoId] = useState(null);
@@ -110,11 +113,11 @@ const GestionUsuarios = ({ user, onLogout }) => {
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
-            <p className="text-gray-500 mt-1">Administra los usuarios y sus roles en el sistema</p>
+            <h1 className="text-3xl font-bold text-gray-800">{L.title}</h1>
+            <p className="text-gray-500 mt-1">{L.subtitle}</p>
           </div>
           <button onClick={abrirNuevo} className="btn bg-primary-500 hover:bg-primary-600 text-white border-none">
-            + Nuevo usuario
+            + {L.newUser}
           </button>
         </div>
 
@@ -145,15 +148,15 @@ const GestionUsuarios = ({ user, onLogout }) => {
                 )}
               </div>
               <div className="flex gap-3 mt-4">
-                <button onClick={guardar} className="btn bg-primary-500 hover:bg-primary-600 text-white border-none">Guardar</button>
-                <button onClick={() => { setMostrarForm(false); setEditandoId(null); }} className="btn btn-outline">Cancelar</button>
+                <button onClick={guardar} className="btn bg-primary-500 hover:bg-primary-600 text-white border-none">{t.common.save}</button>
+                <button onClick={() => { setMostrarForm(false); setEditandoId(null); }} className="btn btn-outline">{t.common.cancel}</button>
               </div>
             </div>
           </div>
         )}
 
         <div className="mb-4">
-          <input type="text" className="input input-bordered w-full md:w-80" placeholder="Buscar por nombre o correo..." value={busqueda} onChange={handleBusqueda} />
+          <input type="text" className="input input-bordered w-full md:w-80" placeholder={L.search} value={busqueda} onChange={handleBusqueda} />
         </div>
 
         <div className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
@@ -161,11 +164,11 @@ const GestionUsuarios = ({ user, onLogout }) => {
             <table className="table table-zebra">
               <thead>
                 <tr>
-                  <th>Nombre</th>
-                  <th>Correo</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+                  <th>{L.table.name}</th>
+                  <th>{L.table.email}</th>
+                  <th>{L.table.role}</th>
+                  <th>{L.table.status}</th>
+                  <th>{L.table.actions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -174,10 +177,10 @@ const GestionUsuarios = ({ user, onLogout }) => {
                     <td className="font-medium">{u.nombre_completo}</td>
                     <td className="text-sm text-gray-500">{u.email}</td>
                     <td>{rolBadge(u.rol)}</td>
-                    <td>{u.activo ? 'Activo' : 'Inactivo'}</td>
+                    <td>{u.activo ? L.table.active : L.table.inactive}</td>
                     <td>
-                      <button onClick={() => abrirEditar(u)} className="btn btn-xs btn-primary mr-2">Editar</button>
-                      <button onClick={() => eliminar(u.id)} className="btn btn-xs btn-error">Eliminar</button>
+                      <button onClick={() => abrirEditar(u)} className="btn btn-xs btn-primary mr-2">{L.actions.edit}</button>
+                      <button onClick={() => eliminar(u.id)} className="btn btn-xs btn-error">{L.actions.delete}</button>
                     </td>
                   </tr>
                 ))}

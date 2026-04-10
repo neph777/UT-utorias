@@ -1,46 +1,49 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-
-// Configuración de roles con iconos y descripciones
-const ROLES = [
-  {
-    value: 'alumno',
-    label: 'Alumno',
-    description: 'Consulta tus tutorías y compromisos',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m0-6l-3.5-2M12 20l-4-2.5" />
-      </svg>
-    ),
-  },
-  {
-    value: 'tutor', // Cambiado de 'maestro' a 'tutor' para coincidir con el backend
-    label: 'Maestro / Tutor',
-    description: 'Gestiona el seguimiento de tus grupos',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
-  {
-    value: 'admin',
-    label: 'Asesor / Director',
-    description: 'Supervisión general del programa',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
-  },
-];
+import { useLanguage } from '../context/LanguageContext';
 
 const Login = ({ onLogin }) => {
   const navigate = useNavigate();
+  const { lang, toggleLang, t } = useLanguage();
+  const L = t.login;
+
+  const ROLES = [
+    {
+      value: 'alumno',
+      label: L.roles.alumno.label,
+      description: L.roles.alumno.description,
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+            d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m0-6l-3.5-2M12 20l-4-2.5" />
+        </svg>
+      ),
+    },
+    {
+      value: 'tutor',
+      label: L.roles.tutor.label,
+      description: L.roles.tutor.description,
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      ),
+    },
+    {
+      value: 'admin',
+      label: L.roles.admin.label,
+      description: L.roles.admin.description,
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+    },
+  ];
+
   const [rol, setRol] = useState('alumno');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,59 +51,37 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Manejar el envío del formulario con autenticación real
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('=== FORMULARIO ENVIADO ===');
-    console.log('Email:', email);
-    console.log('Password:', password ? '****' : 'vacío');
-    
     setError('');
     setLoading(true);
 
-    // Validación básica antes de enviar
     if (!email.includes('@')) {
-      setError('Ingresa un correo electrónico válido.');
-      setLoading(false);
-      return;
-    }
-    
-    if (password.length < 4) {
-      setError('La contraseña debe tener al menos 4 caracteres.');
+      setError(L.errors.invalidEmail);
       setLoading(false);
       return;
     }
 
-    console.log('Llamando a api.login...');
-    
-    // Llamar a la API real
+    if (password.length < 4) {
+      setError(L.errors.shortPassword);
+      setLoading(false);
+      return;
+    }
+
     const result = await api.login(email, password);
-    
-    console.log('Resultado del login:', result);
-    
+
     if (result.success) {
-      console.log('Login exitoso, usuario:', result.user);
       onLogin(result.user);
-      
-      // Redirigir según el rol
       switch (result.user.rol) {
-        case 'admin':
-          navigate('/admin');
-          break;
-        case 'tutor':
-          navigate('/tutor');
-          break;
-        case 'alumno':
-          navigate('/alumno');
-          break;
-        default:
-          navigate('/');
+        case 'admin': navigate('/admin'); break;
+        case 'tutor': navigate('/tutor'); break;
+        case 'alumno': navigate('/alumno'); break;
+        default: navigate('/');
       }
     } else {
-      console.log('Error en login:', result.error);
-      setError(result.error || 'Error al iniciar sesión. Verifica tus credenciales.');
+      setError(result.error || L.errors.generic);
     }
-    
+
     setLoading(false);
   };
 
@@ -109,7 +90,6 @@ const Login = ({ onLogin }) => {
 
       {/* ── Panel izquierdo — solo en desktop ── */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 to-primary-800 relative overflow-hidden flex-col justify-between p-12">
-        {/* Patrón geométrico decorativo */}
         <div className="absolute inset-0 opacity-10"
           style={{
             backgroundImage: `radial-gradient(circle at 25% 25%, white 1px, transparent 1px),
@@ -117,31 +97,27 @@ const Login = ({ onLogin }) => {
             backgroundSize: '48px 48px'
           }}
         />
-        {/* Círculos decorativos */}
         <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-primary-500/30" />
         <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-primary-400/20" />
 
-        {/* Logo */}
         <div className="relative z-10">
           <img src="/imagenes/logoutnay.png" alt="Logo UTN" className="w-48" />
         </div>
 
-        {/* Texto central */}
         <div className="relative z-10 space-y-6">
           <h1 className="text-4xl font-bold text-white leading-tight">
-            Sistema de<br />
-            <span className="text-primary-200">Tutorías UTN</span>
+            {L.heroTitle.split('\n')[0]}<br />
+            <span className="text-primary-200">{L.heroTitle.split('\n')[1]}</span>
           </h1>
           <p className="text-primary-100 text-lg leading-relaxed max-w-sm">
-            Seguimiento académico integral para alumnos, tutores y directivos de la Universidad Tecnológica de Nayarit.
+            {L.heroSubtitle}
           </p>
 
-          {/* Estadísticas decorativas */}
           <div className="grid grid-cols-3 gap-4 pt-4">
             {[
-              { value: '180+', label: 'Alumnos' },
-              { value: '12',   label: 'Tutores' },
-              { value: '4',    label: 'Grupos' },
+              { value: '180+', label: L.stats.students },
+              { value: '12',   label: L.stats.tutors },
+              { value: '4',    label: L.stats.groups },
             ].map((stat) => (
               <div key={stat.label} className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
                 <p className="text-2xl font-bold text-white">{stat.value}</p>
@@ -151,14 +127,28 @@ const Login = ({ onLogin }) => {
           </div>
         </div>
 
-        {/* Pie del panel */}
         <div className="relative z-10 text-primary-300 text-sm">
           © {new Date().getFullYear()} Universidad Tecnológica de Nayarit
         </div>
       </div>
 
       {/* ── Panel derecho — formulario ── */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative">
+
+        {/* Botón de idioma */}
+        <button
+          onClick={toggleLang}
+          className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-600 transition-colors shadow"
+          title={lang === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+        >
+          <img
+            src={lang === 'es' ? '/imagenes/banderaEU.svg' : '/imagenes/banderamex.png'}
+            alt={lang === 'es' ? 'English' : 'Español'}
+            className="w-6 h-4 object-cover rounded"
+          />
+          <span className="text-white text-xs font-medium">{lang === 'es' ? 'EN' : 'ES'}</span>
+        </button>
+
         <div className="w-full max-w-md">
 
           {/* Logo móvil */}
@@ -166,22 +156,22 @@ const Login = ({ onLogin }) => {
             <div className="w-14 h-14 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
               <span className="text-white text-xl font-bold">UT</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-800">Sistema de Tutorías</h2>
-            <p className="text-gray-400 text-sm mt-1">Universidad Tecnológica de Nayarit</p>
+            <h2 className="text-xl font-bold text-gray-800">{L.mobileTitle}</h2>
+            <p className="text-gray-400 text-sm mt-1">{L.mobileSubtitle}</p>
           </div>
 
           {/* Título del formulario */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800">Iniciar sesión</h2>
-            <p className="text-gray-400 text-sm mt-1">Ingresa con tu cuenta institucional</p>
+            <h2 className="text-2xl font-bold text-gray-800">{L.title}</h2>
+            <p className="text-gray-400 text-sm mt-1">{L.subtitle}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
 
-            {/* Selector de rol — tarjetas visuales */}
+            {/* Selector de rol */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tipo de usuario
+                {L.userType}
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {ROLES.map((r) => (
@@ -202,7 +192,6 @@ const Login = ({ onLogin }) => {
                   </button>
                 ))}
               </div>
-              {/* Descripción del rol seleccionado */}
               <p className="text-xs text-gray-400 mt-2 text-center">
                 {ROLES.find(r => r.value === rol)?.description}
               </p>
@@ -211,7 +200,7 @@ const Login = ({ onLogin }) => {
             {/* Correo */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Correo institucional
+                {L.email}
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -222,7 +211,7 @@ const Login = ({ onLogin }) => {
                 </span>
                 <input
                   type="email"
-                  placeholder="ejemplo@utn.edu.mx"
+                  placeholder={L.emailPlaceholder}
                   className="input input-bordered w-full pl-9 focus:border-primary-500 focus:outline-none"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError(''); }}
@@ -236,10 +225,10 @@ const Login = ({ onLogin }) => {
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <label className="block text-sm font-medium text-gray-700">
-                  Contraseña
+                  {L.password}
                 </label>
                 <a href="#" className="text-xs text-primary-500 hover:text-primary-600 transition-colors">
-                  ¿Olvidaste tu contraseña?
+                  {L.forgotPassword}
                 </a>
               </div>
               <div className="relative">
@@ -258,12 +247,10 @@ const Login = ({ onLogin }) => {
                   required
                   autoComplete="current-password"
                 />
-                {/* Toggle mostrar/ocultar contraseña */}
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   {showPass ? (
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -282,7 +269,7 @@ const Login = ({ onLogin }) => {
               </div>
             </div>
 
-            {/* Mensaje de error */}
+            {/* Error */}
             {error && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,7 +280,7 @@ const Login = ({ onLogin }) => {
               </div>
             )}
 
-            {/* Botón submit */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -302,17 +289,14 @@ const Login = ({ onLogin }) => {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="loading loading-spinner loading-sm" />
-                  Verificando...
+                  {L.loading}
                 </span>
-              ) : (
-                'Ingresar al sistema'
-              )}
+              ) : L.submit}
             </button>
           </form>
 
-          {/* Ayuda */}
           <p className="mt-6 text-center text-xs text-gray-400">
-            ¿Problemas para acceder?{' '}
+            {L.helpText}{' '}
             <a href="mailto:soporte@utn.edu.mx" className="text-primary-500 hover:underline">
               soporte@utn.edu.mx
             </a>

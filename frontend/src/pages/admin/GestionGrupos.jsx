@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import { api } from '../../services/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 const GestionGrupos = ({ user, onLogout }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  const L = t.gestionGrupos;
   const [lista, setLista] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -87,11 +90,11 @@ const GestionGrupos = ({ user, onLogout }) => {
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Gestión de Grupos</h1>
-            <p className="text-gray-500 mt-1">Crea grupos y asigna tutores responsables</p>
+            <h1 className="text-3xl font-bold text-gray-800">{L.title}</h1>
+            <p className="text-gray-500 mt-1">{t.common.loading === 'Cargando...' ? 'Crea grupos y asigna tutores responsables' : 'Create groups and assign responsible tutors'}</p>
           </div>
           <button onClick={abrirNuevo} className="btn bg-primary-500 hover:bg-primary-600 text-white border-none">
-            + Nuevo grupo
+            + {L.newGroup}
           </button>
         </div>
 
@@ -111,8 +114,8 @@ const GestionGrupos = ({ user, onLogout }) => {
                 </select>
               </div>
               <div className="flex gap-3 mt-4">
-                <button onClick={guardar} className="btn bg-primary-500 hover:bg-primary-600 text-white border-none">Guardar</button>
-                <button onClick={() => setMostrarForm(false)} className="btn btn-outline">Cancelar</button>
+                <button onClick={guardar} className="btn bg-primary-500 hover:bg-primary-600 text-white border-none">{t.common.save}</button>
+                <button onClick={() => setMostrarForm(false)} className="btn btn-outline">{t.common.cancel}</button>
               </div>
             </div>
           </div>
@@ -129,9 +132,9 @@ const GestionGrupos = ({ user, onLogout }) => {
                 <p className="text-sm text-gray-500">Cuatrimestre: {g.cuatrimestre}</p>
                 <p className="text-sm text-gray-500">Alumnos: {g.alumnos?.length || 0}</p>
                 <div className="card-actions justify-end mt-4 flex-wrap gap-2">
-                  <button onClick={() => navigate(`/admin/grupos/${g.id}`)} className="btn btn-sm btn-outline btn-primary">Asignar alumnos</button>
-                  <button onClick={() => abrirEditar(g)} className="btn btn-sm btn-outline">Editar</button>
-                  <button onClick={() => eliminar(g.id)} className="btn btn-sm btn-outline btn-error">Eliminar</button>
+                  <button onClick={() => navigate(`/admin/grupos/${g.id}`)} className="btn btn-sm btn-outline btn-primary">{L.viewStudents}</button>
+                  <button onClick={() => abrirEditar(g)} className="btn btn-sm btn-outline">{t.common.edit}</button>
+                  <button onClick={() => eliminar(g.id)} className="btn btn-sm btn-outline btn-error">{t.common.delete}</button>
                 </div>
               </div>
             </div>

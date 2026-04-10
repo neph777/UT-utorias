@@ -1,4 +1,9 @@
+import { useLanguage } from '../../context/LanguageContext'
+
 const Footer = () => {
+  const { t } = useLanguage()
+  const L = t.footer
+
   return (
     <footer className="bg-dark-500 border-t border-primary-500/20 py-6 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -8,13 +13,13 @@ const Footer = () => {
           </div>
           <div className="flex gap-6">
             <a href="#" className="text-gray-400 hover:text-primary-400 text-sm transition-colors">
-              Términos y Condiciones
+              {L.terms}
             </a>
             <a href="#" className="text-gray-400 hover:text-primary-400 text-sm transition-colors">
-              Política de Privacidad
+              {L.privacy}
             </a>
             <a href="#" className="text-gray-400 hover:text-primary-400 text-sm transition-colors">
-              Contacto
+              {L.contact}
             </a>
           </div>
         </div>
