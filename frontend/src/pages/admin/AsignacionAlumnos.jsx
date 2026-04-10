@@ -14,7 +14,6 @@ const AsignacionAlumnos = ({ user, onLogout }) => {
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
 
-  // Cargar datos del grupo y alumnos
   useEffect(() => {
     cargarDatos()
   }, [grupoId])
@@ -24,7 +23,6 @@ const AsignacionAlumnos = ({ user, onLogout }) => {
     setError(null)
     
     try {
-      // Obtener lista de grupos
       const gruposData = await api.getGrupos()
       const grupoActual = gruposData.find(g => g.id === parseInt(grupoId))
       
@@ -36,12 +34,8 @@ const AsignacionAlumnos = ({ user, onLogout }) => {
       
       setGrupo(grupoActual)
       
-      // Obtener alumnos disponibles (no asignados a ningún grupo)
       const alumnosDisponibles = await api.getAlumnosDisponibles()
       
-      // Obtener alumnos asignados a este grupo
-      // Si tu API tiene un endpoint para obtener alumnos del grupo, úsalo
-      // Por ahora, asumimos que los alumnos asignados vienen en grupoActual.alumnos
       const alumnosAsignados = grupoActual.alumnos || []
       
       setAsignados(alumnosAsignados)
@@ -60,15 +54,12 @@ const AsignacionAlumnos = ({ user, onLogout }) => {
   const asignar = async (alumno) => {
     setSaving(true)
     try {
-      // Llamar a la API para asignar alumno al grupo
       const nuevosAlumnos = [...asignados, alumno]
       await api.asignarAlumnos(grupoId, nuevosAlumnos.map(a => a.id))
       
-      // Actualizar estado local
       setAsignados(nuevosAlumnos)
       setDisponibles(disponibles.filter(a => a.id !== alumno.id))
       
-      // Mostrar mensaje de éxito (opcional)
       console.log('Alumno asignado correctamente')
       
     } catch (error) {
@@ -82,15 +73,12 @@ const AsignacionAlumnos = ({ user, onLogout }) => {
   const quitar = async (alumno) => {
     setSaving(true)
     try {
-      // Llamar a la API para quitar alumno del grupo
       const nuevosAlumnos = asignados.filter(a => a.id !== alumno.id)
       await api.asignarAlumnos(grupoId, nuevosAlumnos.map(a => a.id))
       
-      // Actualizar estado local
       setAsignados(nuevosAlumnos)
       setDisponibles([...disponibles, alumno])
       
-      // Mostrar mensaje de éxito (opcional)
       console.log('Alumno removido correctamente')
       
     } catch (error) {

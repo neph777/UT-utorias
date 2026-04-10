@@ -23,7 +23,6 @@ class Tutor extends Model
         return $this->belongsTo(Usuario::class);
     }
 
-    // CORREGIR: La relación con grupos debe especificar la tabla pivote
     public function grupos()
     {
         return $this->belongsToMany(Grupo::class, 'grupo_tutor', 'tutor_id', 'grupo_id')

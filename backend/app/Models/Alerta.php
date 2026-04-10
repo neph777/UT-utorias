@@ -15,7 +15,7 @@ class Alerta extends Model
         'alumno_id',
         'tutor_id',
         'tipo',
-        'asunto',  // O 'Asunto' si está con mayúscula
+        'asunto',  
         'fecha',
         'atendida'
     ];

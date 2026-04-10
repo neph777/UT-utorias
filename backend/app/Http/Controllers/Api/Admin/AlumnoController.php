@@ -11,7 +11,7 @@ class AlumnoController extends Controller
 {
     public function expediente($id)
     {
-        // Buscar por ID de alumno o por usuario_id
+        // 
         $alumno = Alumno::where('id', $id)
             ->orWhere('usuario_id', $id)
             ->with('usuario', 'tutor.usuario', 'grupos')

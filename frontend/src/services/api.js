@@ -100,7 +100,6 @@ login: async (email, password) => {
     }
   },
   
-  // Modifica la función getPerfil en api.js
   getPerfil: async () => {
   console.log('=== getPerfil iniciado ===');
   const token = getToken();
@@ -122,7 +121,6 @@ login: async (email, password) => {
     const data = await response.json();
     console.log('Datos recibidos:', data);
     
-    // Normalizar los datos del usuario
     return {
       id: data.id,
       email: data.email,
@@ -161,7 +159,6 @@ login: async (email, password) => {
     const response = await authFetch(`/admin/usuarios?search=${search}`);
     const data = await response.json();
     
-    // Normalizar para incluir campos del semáforo
     if (data.data && Array.isArray(data.data)) {
       return {
         ...data,
@@ -171,7 +168,6 @@ login: async (email, password) => {
           promedio: usuario.promedio || 'N/A',
           grupo_id: usuario.grupo_id || null,
           ultima_tutoria: usuario.ultima_tutoria || null,
-          // Para el expediente, necesitamos el ID del alumno, no del usuario
           alumno_id: usuario.alumno?.id || null
         }))
       };
@@ -275,12 +271,11 @@ getAlumnosDisponibles: async () => {
   const response = await authFetch('/admin/alumnos-disponibles');
   const data = await response.json();
   
-  // Asegurar que los alumnos tengan las propiedades necesarias
   if (Array.isArray(data)) {
     return data.map(alumno => ({
       id: alumno.id,
       nombre_completo: alumno.nombre_completo,
-      nombre: alumno.nombre_completo, // Para compatibilidad
+      nombre: alumno.nombre_completo, 
       email: alumno.email,
       matricula: alumno.matricula || alumno.email,
       semaforo: alumno.semaforo || 'verde',
@@ -309,7 +304,6 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
       const data = await response.json();
       console.log('Expediente data:', data);
       
-      // La API de AlumnoController::expediente devuelve { alumno, historial }
       return data;
     } catch (error) {
       console.error('Error en getExpedienteAlumno:', error);
