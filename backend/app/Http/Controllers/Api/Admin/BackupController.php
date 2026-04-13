@@ -156,34 +156,48 @@ class BackupController extends Controller
      * Guardar configuración de backup automático
      */
     public function saveConfig(Request $request)
-    {
-        try {
-            $config = [
-                'frecuencia' => $request->frecuencia,
-                'hora' => $request->hora,
-                'retener' => $request->retener,
-                'activo' => $request->activo
-            ];
-            
-            // Guardar configuración en archivo o base de datos
-            $rutaConfig = storage_path('app/backups/config.json');
-            file_put_contents($rutaConfig, json_encode($config));
-            
-            // Programar tarea si está activo
-            if ($request->activo) {
-                $this->programarBackupAutomatico($config);
+        {
+            try {
+                $request->validate([
+                    'frecuencia' => 'required|in:diario,semanal,mensual',
+                    'hora' => 'required',
+                    'retener' => 'required|integer|min:1|max:365',
+                    'activo' => 'required|boolean'
+                ]);
+
+                $config = \App\Models\BackupConfig::first();
+
+                if (!$config) {
+                    $config = \App\Models\BackupConfig::create([
+                        'frecuencia' => $request->frecuencia,
+                        'hora' => $request->hora,
+                        'retener_dias' => $request->retener,
+                        'activo' => $request->activo,
+                        'ultima_ejecucion' => null
+                    ]);
+                } else {
+                    $config->update([
+                        'frecuencia' => $request->frecuencia,
+                        'hora' => $request->hora,
+                        'retener_dias' => $request->retener,
+                        'activo' => $request->activo
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Configuración guardada correctamente'
+                ]);
+
+            } catch (\Exception $e) {
+                Log::error('Error guardando config backup: ' . $e->getMessage());
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al guardar configuración'
+                ], 500);
             }
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Configuración guardada exitosamente'
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('Error al guardar configuración: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Error al guardar configuración'], 500);
         }
-    }
     
     /**
      * Obtener configuración de backup
@@ -191,26 +205,35 @@ class BackupController extends Controller
     public function getConfig()
     {
         try {
-            $rutaConfig = storage_path('app/backups/config.json');
-            $config = [
-                'frecuencia' => 'diario',
-                'hora' => '02:00',
-                'retener' => '30',
-                'activo' => true
-            ];
-            
-            if (file_exists($rutaConfig)) {
-                $configGuardada = json_decode(file_get_contents($rutaConfig), true);
-                $config = array_merge($config, $configGuardada);
+            $config = \App\Models\BackupConfig::first();
+
+            if (!$config) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'frecuencia' => 'diario',
+                        'hora' => '02:00',
+                        'retener' => 30,
+                        'activo' => false
+                    ]
+                ]);
             }
-            
+
             return response()->json([
                 'success' => true,
-                'data' => $config
+                'data' => [
+                    'frecuencia' => $config->frecuencia,
+                    'hora' => $config->hora,
+                    'retener' => $config->retener_dias,
+                    'activo' => $config->activo
+                ]
             ]);
-            
+
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al obtener configuración'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener configuración'
+            ], 500);
         }
     }
     

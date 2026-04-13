@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('alumno_id')->constrained('alumnos')->onDelete('cascade');
             $table->foreignId('tutor_id')->nullable()->constrained('tutores')->onDelete('set null');
-            $table->enum('color_anterior', ['rojo', 'amarillo', 'verde']);
+            $table->enum('color_anterior', ['rojo', 'amarillo', 'verde'])->nullable();
             $table->enum('color_nuevo', ['rojo', 'amarillo', 'verde']);
             $table->text('razon_cambio')->nullable();
             $table->enum('origen', ['automatico', 'manual'])->default('automatico');

@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withSchedule(function (Schedule $schedule) {
-        // Programar backups aquí si es necesario
+    $schedule->command('backup:programado')->everyMinute();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // Configurar CORS - HABILITAR PARA TODAS LAS RUTAS
