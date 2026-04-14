@@ -1,0 +1,33 @@
+# Sistema de Tutorías UTN
+
+## Requisitos previos
+
+- Node.js (v18 o superior)
+- PHP (v8.1 o superior)
+- Composer
+- Git
+- MySQL (o Laragon/XAMPP)
+
+## Clonar el proyecto
+
+```bash
+git clone https://github.com/neph777/UT-utorias.git
+cd UT-utorias
+git checkout dev
+
+
+
+
+## Uso de Backend
+cd ../backend
+composer install
+cp .env.example .env
+php artisan key:generate
+
+
+
+## Uso de Frontend
+cd frontend
+npm install
+npm run dev
+# Abrir http://localhost:5173
