@@ -142,4 +142,43 @@ class Alumno extends Model
         
         return $this;
     }
+
+    public function semaforoCategorias()
+    {
+        return $this->hasMany(SemaforoCategoria::class);
+    }
+
+    // Calcular semáforo basado en categorías
+    public function calcularSemaforoPorCategorias()
+    {
+        $categorias = $this->semaforoCategorias;
+        
+        if ($categorias->isEmpty()) {
+            // Crear categorías por defecto
+            foreach (['academico', 'conductual', 'personal', 'asistencia'] as $cat) {
+                SemaforoCategoria::create([
+                    'alumno_id' => $this->id,
+                    'categoria' => $cat,
+                    'color' => 'verde',
+                    'observacion' => null
+                ]);
+            }
+            $categorias = $this->semaforoCategorias;
+        }
+        
+        return SemaforoCategoria::getColorCritico($categorias);
+    }
+
+    // Obtener todas las categorías con su color
+    public function getCategoriasConColor()
+    {
+        $categorias = $this->semaforoCategorias;
+        
+        if ($categorias->isEmpty()) {
+            $this->calcularSemaforoPorCategorias();
+            $categorias = $this->semaforoCategorias;
+        }
+        
+        return $categorias;
+    }
 }

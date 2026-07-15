@@ -30,36 +30,29 @@ const ExpedienteAlumno = ({ user, onLogout }) => {
   }, [alumnoId])
 
   const cargarExpediente = async () => {
-    setLoading(true)
-    setError('')
+  setLoading(true);
+  setError('');
+  
+  try {
+    console.log('Cargando expediente del alumno (admin):', alumnoId);
+    const response = await api.getExpedienteAlumno(alumnoId);
+    console.log('Expediente recibido:', response);
     
-    try {
-      console.log('Cargando expediente del alumno:', alumnoId)
-      const expediente = await api.getExpedienteAlumno(alumnoId)
-      console.log('Expediente recibido:', expediente)
-      
-      if (expediente.alumno) {
-        setAlumno(expediente.alumno)
-        setHistorial(expediente.historial || [])
-        setGrupo(expediente.alumno.grupos?.[0] || null)
-        setTutor(expediente.alumno.tutor || null)
-        setFormData({
-          promedio: expediente.alumno.promedio_general || expediente.alumno.promedio || '',
-          semaforo_color: expediente.alumno.semaforo_color || expediente.alumno.semaforo || 'verde',
-          semaforo_razon: expediente.alumno.semaforo_razon || '',
-          observaciones: expediente.alumno.semaforo_observacion || ''
-        })
-      } else {
-        setAlumno(expediente)
-        setHistorial([])
-      }
-    } catch (error) {
-      console.error('Error al cargar expediente:', error)
-      setError('Error al cargar el expediente del alumno')
-    } finally {
-      setLoading(false)
+    if (response.success && response.data) {
+      setAlumno(response.data.alumno);
+      setCategorias(response.data.categorias || []);
+      setHistorial(response.data.historial || []);
+    } else {
+      setError(response.message || 'Error al cargar el expediente');
     }
+  } catch (error) {
+    console.error('Error al cargar expediente:', error);
+    setError('Error al cargar el expediente del alumno');
+  } finally {
+    setLoading(false);
   }
+};
+
 
   const handleEdit = () => {
     setEditando(true)

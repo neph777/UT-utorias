@@ -49,6 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/grupos/{id}/alumnos', [DashboardTutorController::class, 'getAlumnosByGrupo']);
         Route::post('/tutoria', [DashboardTutorController::class, 'registrarTutoria']);
         Route::post('/cita', [DashboardTutorController::class, 'generarCita']);
+        Route::get('/alumno/{id}/expediente', [App\Http\Controllers\Api\Tutor\TutorAlumnoController::class, 'expediente']);
+        Route::put('/alumno/{id}/categorias', [App\Http\Controllers\Api\Tutor\TutorAlumnoController::class, 'actualizarCategorias']);
     });
 
     // Rutas para alumnos 

@@ -295,21 +295,20 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
   
   // ADMIN - EXPEDIENTE 
   getExpedienteAlumno: async (alumnoId) => {
-    console.log('=== getExpedienteAlumno llamado ===');
-    console.log('Alumno ID:', alumnoId);
-    
-    try {
-      const response = await authFetch(`/admin/alumnos/${alumnoId}/expediente`);
-      console.log('Response status:', response.status);
-      const data = await response.json();
-      console.log('Expediente data:', data);
-      
-      return data;
-    } catch (error) {
-      console.error('Error en getExpedienteAlumno:', error);
-      throw error;
-    }
-  },
+  console.log('=== getExpedienteAlumno (admin) llamado ===');
+  console.log('Alumno ID:', alumnoId);
+  
+  try {
+    const response = await authFetch(`/admin/alumnos/${alumnoId}/expediente`);
+    console.log('Response status:', response.status);
+    const data = await response.json();
+    console.log('Expediente data:', data);
+    return data;
+  } catch (error) {
+    console.error('Error en getExpedienteAlumno:', error);
+    throw error;
+  }
+},
   
   actualizarExpediente: async (alumnoId, data) => {
     console.log('=== actualizarExpediente llamado ===');
@@ -388,6 +387,15 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
     });
     return response.json();
   },
+  
+  actualizarCategoriasTutor: async (alumnoId, data) => {
+  const response = await authFetch(`/tutor/alumno/${alumnoId}/categorias`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+  return response.json();
+},
+
 
   generarCita: async (data) => {
     const response = await authFetch('/tutor/cita', {
@@ -396,6 +404,22 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
     });
     return response.json();
   },
+  getTutorExpediente: async (alumnoId) => {
+  console.log('=== getTutorExpediente llamado ===');
+  console.log('Alumno ID:', alumnoId);
+  
+  try {
+    const response = await authFetch(`/tutor/alumno/${alumnoId}/expediente`);
+    console.log('Response status:', response.status);
+    const data = await response.json();
+    console.log('Expediente data:', data);
+    return data;
+  } catch (error) {
+    console.error('Error en getTutorExpediente:', error);
+    throw error;
+  }
+},
+
 
   // ALUMNO - EXPEDIENTE
   getMiExpediente: async () => {

@@ -77,9 +77,9 @@ const DashboardMaestro = ({ user, onLogout }) => {
 
   const getSemaforoTexto = (color) => {
     const textos = {
-      rojo: L.semaforo.rojo,
-      amarillo: L.semaforo.amarillo,
-      verde: L.semaforo.verde,
+      rojo: L.semaforo?.rojo || 'Prioridad Alta',
+      amarillo: L.semaforo?.amarillo || 'Seguimiento',
+      verde: L.semaforo?.verde || 'Estable',
     }
     return textos[color] || color
   }
@@ -158,21 +158,21 @@ const DashboardMaestro = ({ user, onLogout }) => {
         {/* Encabezado */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">{L.title}</h1>
-            <p className="text-gray-500 mt-1">{L.subtitle}</p>
+            <h1 className="text-3xl font-bold text-gray-800">{L.title || 'Mis Tutorías'}</h1>
+            <p className="text-gray-500 mt-1">{L.subtitle || 'Gestiona el seguimiento académico de tus alumnos'}</p>
           </div>
           <div className="flex gap-3 flex-wrap">
             <button
               onClick={() => navigate('/tutor/semaforo')}
               className="btn btn-outline btn-error"
             >
-              Ver Semáforo
+              {L.semaforo?.title || 'Ver Semáforo'}
             </button>
             <button
               onClick={() => setShowReporteModal(true)}
               className="btn bg-primary-500 hover:bg-primary-600 text-white border-none"
             >
-              {L.generateReport}
+              {L.generateReport || 'Generar Reporte'}
             </button>
           </div>
         </div>
@@ -181,13 +181,13 @@ const DashboardMaestro = ({ user, onLogout }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="stats shadow bg-base-100 border-l-4 border-primary-500">
             <div className="stat">
-              <div className="stat-title">{L.studentsInGroup}</div>
+              <div className="stat-title">{L.studentsInGroup || 'Alumnos en el Grupo'}</div>
               <div className="stat-value text-primary-500">{alumnos.length}</div>
             </div>
           </div>
           <div className="stats shadow bg-base-100 border-l-4 border-red-500">
             <div className="stat">
-              <div className="stat-title">{L.requireAttention}</div>
+              <div className="stat-title">{L.requireAttention || 'Requieren Atención'}</div>
               <div className="stat-value text-red-500">
                 {alumnos.filter(a => a.semaforo === 'rojo').length}
               </div>
@@ -195,7 +195,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
           </div>
           <div className="stats shadow bg-base-100 border-l-4 border-green-500">
             <div className="stat">
-              <div className="stat-title">{L.tutoriasCompleted}</div>
+              <div className="stat-title">{L.tutoriasCompleted || 'Tutorías Realizadas'}</div>
               <div className="stat-value text-green-500">{stats.tutorias_realizadas}</div>
             </div>
           </div>
@@ -229,19 +229,19 @@ const DashboardMaestro = ({ user, onLogout }) => {
             <table className="table table-zebra">
               <thead>
                 <tr>
-                  <th>{L.table.matricula}</th>
-                  <th>{L.table.name}</th>
-                  <th>{L.table.average}</th>
-                  <th>{L.table.status}</th>
-                  <th>{L.table.lastTutoria}</th>
-                  <th>{L.table.actions}</th>
+                  <th>{L.table?.matricula || 'Matrícula'}</th>
+                  <th>{L.table?.name || 'Nombre'}</th>
+                  <th>{L.table?.average || 'Promedio'}</th>
+                  <th>{L.table?.status || 'Estado'}</th>
+                  <th>{L.table?.lastTutoria || 'Última Tutoría'}</th>
+                  <th>{L.table?.actions || 'Acciones'}</th>
                 </tr>
               </thead>
               <tbody>
                 {alumnos.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="text-center text-gray-400 py-8">
-                      {L.noStudents}
+                      {L.noStudents || 'No hay alumnos en este grupo'}
                     </td>
                   </tr>
                 ) : (
@@ -256,21 +256,27 @@ const DashboardMaestro = ({ user, onLogout }) => {
                         </span>
                       </td>
                       <td className="text-sm text-gray-500">
-                        {alumno.ultima_tutoria || L.table.noTutorias}
+                        {alumno.ultima_tutoria || L.table?.noTutorias || 'Sin tutorías'}
                       </td>
                       <td>
-                        <div className="flex gap-2">
-                          {/*<button
-                            onClick={() => navigate(`/tutor/cita/${alumno.usuario_id || alumno.id}`)}
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            onClick={() => navigate(`/tutor/cita/${alumno.id}`)}
                             className="btn btn-xs btn-outline btn-primary"
                           >
-                            Citar
-                          </button>*/}
+                            {L.actions?.citar || 'Citar'}
+                          </button>
                           <button
                             onClick={() => navigate(`/tutor/tutoria/${alumno.id}`)}
                             className="btn btn-xs btn-outline btn-success"
                           >
-                            {L.actions.tutoria}
+                            {L.actions?.tutoria || 'Registrar'}
+                          </button>
+                          <button
+                            onClick={() => navigate(`/tutor/alumno/${alumno.id}`)}
+                            className="btn btn-xs btn-outline btn-info"
+                          >
+                            {L.actions?.expediente || 'Ver expediente'}
                           </button>
                         </div>
                       </td>
@@ -288,12 +294,12 @@ const DashboardMaestro = ({ user, onLogout }) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">{L.generateReport}</h2>
+              <h2 className="text-xl font-bold text-gray-800">{L.generateReport || 'Generar Reporte'}</h2>
               <button onClick={() => setShowReporteModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{L.group}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{L.group || 'Grupo'}</label>
                 <select
                   className="select select-bordered w-full focus:border-primary-500 focus:outline-none"
                   value={selectedGroupId || ''}
@@ -306,7 +312,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {L.selectStudents} <span className="text-gray-400 font-normal">({L.optional})</span>
+                  {L.selectStudents || 'Seleccionar alumnos'} <span className="text-gray-400 font-normal">({L.optional || 'opcional'})</span>
                 </label>
                 <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto p-2">
                   {alumnos.map(alumno => (
@@ -337,10 +343,10 @@ const DashboardMaestro = ({ user, onLogout }) => {
             </div>
             <div className="mt-6 flex gap-3">
               <button onClick={generarReporteWord} className="flex-1 py-2 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-colors">
-                {L.download}
+                {L.download || 'Descargar Reporte'}
               </button>
               <button onClick={() => setShowReporteModal(false)} className="flex-1 py-2 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                {L.cancel}
+                {L.cancel || 'Cancelar'}
               </button>
             </div>
           </div>
