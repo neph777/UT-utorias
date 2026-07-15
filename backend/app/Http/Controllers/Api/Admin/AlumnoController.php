@@ -11,7 +11,6 @@ class AlumnoController extends Controller
 {
     public function expediente($id)
     {
-        // 
         $alumno = Alumno::where('id', $id)
             ->orWhere('usuario_id', $id)
             ->with('usuario', 'tutor.usuario', 'grupos')
@@ -21,6 +20,20 @@ class AlumnoController extends Controller
             ->with('tutor.usuario')
             ->orderBy('fecha', 'desc')
             ->get();
+        
+        $categorias = $alumno->semaforoCategorias;
+        
+        if ($categorias->isEmpty()) {
+            foreach (['economico', 'academico', 'personal', 'familiar'] as $cat) {
+                \App\Models\SemaforoCategoria::create([
+                    'alumno_id' => $alumno->id,
+                    'categoria' => $cat,
+                    'color' => 'verde',
+                    'observacion' => null
+                ]);
+            }
+            $categorias = $alumno->semaforoCategorias;
+        }
         
         return response()->json([
             'alumno' => [
@@ -47,6 +60,14 @@ class AlumnoController extends Controller
                     'especialidad' => $alumno->tutor->especialidad
                 ] : null
             ],
+            'categorias' => $categorias->map(function($cat) {
+                return [
+                    'id' => $cat->id,
+                    'categoria' => $cat->categoria,
+                    'color' => $cat->color,
+                    'observacion' => $cat->observacion
+                ];
+            }),
             'historial' => $historial->map(function($tutoria) {
                 return [
                     'id' => $tutoria->id,
@@ -54,11 +75,21 @@ class AlumnoController extends Controller
                     'tema' => $tutoria->tema,
                     'compromiso' => $tutoria->compromiso,
                     'observaciones' => $tutoria->observaciones,
-                    'tutor' => $tutoria->tutor->usuario->nombre_completo
+                    'tutor' => $tutoria->tutor->usuario->nombre_completo,
+                    'categoria_academico' => $tutoria->categoria_academico,
+                    'categoria_economico' => $tutoria->categoria_economico,
+                    'categoria_personal' => $tutoria->categoria_personal,
+                    'categoria_familiar' => $tutoria->categoria_familiar,
+                    'observacion_academico' => $tutoria->observacion_academico,
+                    'observacion_economico' => $tutoria->observacion_economico,
+                    'observacion_personal' => $tutoria->observacion_personal,
+                    'observacion_familiar' => $tutoria->observacion_familiar,
+                    'promedio_tutoria' => $tutoria->promedio_tutoria
                 ];
             })
         ]);
     }
+
 
     public function update(Request $request, $id)
     {

@@ -1,233 +1,362 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js'
+import { Doughnut, Bar, Radar } from 'react-chartjs-2'
 import Layout from '../../components/layout/Layout'
 import { api } from '../../services/api'
-import { jsPDF } from 'jspdf'
-import html2canvas from 'html2canvas'
+
+// Registrar componentes de Chart.js
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler
+)
+
+// ============================================
+// CATEGORÍAS
+// ============================================
+const CATEGORIAS = {
+  economico: { label: 'Económico', icon: '💰', description: 'Situación económica del alumno' },
+  academico: { label: 'Académico', icon: '📚', description: 'Rendimiento académico y calificaciones' },
+  personal: { label: 'Personal', icon: '🧠', description: 'Situación personal y emocional' },
+  familiar: { label: 'Familiar', icon: '👨‍👩‍👧‍👦', description: 'Situación familiar y entorno' }
+}
+
+const COLORES = {
+  verde: { bg: 'bg-green-100', border: 'border-green-500', text: 'text-green-700', badge: 'badge-success' },
+  amarillo: { bg: 'bg-yellow-100', border: 'border-yellow-500', text: 'text-yellow-700', badge: 'badge-warning' },
+  rojo: { bg: 'bg-red-100', border: 'border-red-500', text: 'text-red-700', badge: 'badge-error' }
+}
 
 const ExpedienteAlumno = ({ user, onLogout }) => {
   const { alumnoId } = useParams()
   const navigate = useNavigate()
-  
+
+  // Refs para las gráficas
+  const doughnutRef = useRef(null)
+  const radarRef = useRef(null)
+  const barRef = useRef(null)
+
   const [alumno, setAlumno] = useState(null)
+  const [categorias, setCategorias] = useState([])
   const [historial, setHistorial] = useState([])
   const [grupo, setGrupo] = useState(null)
   const [tutor, setTutor] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [editando, setEditando] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [generandoPDF, setGenerandoPDF] = useState(false)
-  const [formData, setFormData] = useState({
-    promedio: '',
-    semaforo_color: '',
-    semaforo_razon: '',
-    observaciones: ''
-  })
+  const [generandoInforme, setGenerandoInforme] = useState(false)
+  const [generandoExpediente, setGenerandoExpediente] = useState(false)
 
   useEffect(() => {
     cargarExpediente()
   }, [alumnoId])
 
   const cargarExpediente = async () => {
-  setLoading(true);
-  setError('');
-  
-  try {
-    console.log('Cargando expediente del alumno (admin):', alumnoId);
-    const response = await api.getExpedienteAlumno(alumnoId);
-    console.log('Expediente recibido:', response);
-    
-    if (response.success && response.data) {
-      setAlumno(response.data.alumno);
-      setCategorias(response.data.categorias || []);
-      setHistorial(response.data.historial || []);
-    } else {
-      setError(response.message || 'Error al cargar el expediente');
-    }
-  } catch (error) {
-    console.error('Error al cargar expediente:', error);
-    setError('Error al cargar el expediente del alumno');
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true)
+    setError('')
 
-
-  const handleEdit = () => {
-    setEditando(true)
-  }
-
-  const handleCancelEdit = () => {
-    setEditando(false)
-    setFormData({
-      promedio: alumno?.promedio_general || alumno?.promedio || '',
-      semaforo_color: alumno?.semaforo_color || alumno?.semaforo || 'verde',
-      semaforo_razon: alumno?.semaforo_razon || '',
-      observaciones: alumno?.semaforo_observacion || ''
-    })
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
     try {
-      await api.actualizarExpediente(alumnoId, formData)
-      setEditando(false)
-      await cargarExpediente()
-      alert('Expediente actualizado correctamente')
-    } catch (error) {
-      console.error('Error al guardar:', error)
-      alert('Error al guardar los cambios')
-    } finally {
-      setSaving(false)
-    }
-  }
+      console.log('Cargando expediente del alumno (admin):', alumnoId)
+      const response = await api.getExpedienteAlumno(alumnoId)
+      console.log('Expediente recibido:', response)
 
-const generarReportePDF = () => {
-  setGenerandoPDF(true)
-  
-  try {
-    const pdf = new jsPDF({
-      unit: 'mm',
-      format: 'letter',
-      orientation: 'portrait'
-    })
-    
-    const nombre = nombreAlumno
-    const matricula = matriculaAlumno
-    const grupoNom = grupoNombre
-    const tutorNom = tutorNombre
-    const promedio = alumno?.promedio_general || alumno?.promedio || 'N/A'
-    const estado = semaforoInfo.texto
-    const razon = alumno?.semaforo_razon || ''
-    const historialData = historial
-    
-    // Configurar fuente
-    pdf.setFont('helvetica')
-    
-    // Título principal
-    pdf.setFontSize(18)
-    pdf.setTextColor(30, 64, 175) // azul
-    pdf.text('Universidad Tecnológica de Nayarit', 105, 20, { align: 'center' })
-    
-    pdf.setFontSize(14)
-    pdf.setTextColor(0, 0, 0)
-    pdf.text('Sistema de Tutorías - Expediente Académico', 105, 30, { align: 'center' })
-    
-    pdf.setFontSize(10)
-    pdf.setTextColor(100, 100, 100)
-    pdf.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 105, 38, { align: 'center' })
-    
-    pdf.line(20, 42, 190, 42)
-    
-    // Sección: Datos del Alumno
-    pdf.setFontSize(14)
-    pdf.setTextColor(30, 64, 175)
-    pdf.text('Datos del Alumno', 20, 55)
-    
-    pdf.setFontSize(10)
-    pdf.setTextColor(0, 0, 0)
-    
-    let y = 65
-    const lineHeight = 8
-    
-    pdf.text(`Nombre: ${nombre}`, 20, y)
-    y += lineHeight
-    pdf.text(`Matrícula: ${matricula}`, 20, y)
-    y += lineHeight
-    pdf.text(`Grupo: ${grupoNom}`, 20, y)
-    y += lineHeight
-    pdf.text(`Tutor: ${tutorNom}`, 20, y)
-    y += lineHeight
-    pdf.text(`Promedio: ${promedio}`, 20, y)
-    y += lineHeight
-    pdf.text(`Estado Académico: ${estado}`, 20, y)
-    y += lineHeight
-    
-    if (razon) {
-      const razonLines = pdf.splitTextToSize(`Razón: ${razon}`, 160)
-      pdf.text(razonLines, 20, y)
-      y += (razonLines.length * lineHeight)
-    }
-    
-    y += 5
-    pdf.line(20, y, 190, y)
-    y += 8
-    
-    // Sección: Historial de Tutorías
-    pdf.setFontSize(14)
-    pdf.setTextColor(30, 64, 175)
-    pdf.text('Historial de Tutorías', 20, y)
-    y += 8
-    
-    if (historialData.length === 0) {
-      pdf.setFontSize(10)
-      pdf.setTextColor(100, 100, 100)
-      pdf.text('No hay tutorías registradas', 105, y + 5, { align: 'center' })
-    } else {
-      // Encabezados de tabla
-      pdf.setFillColor(229, 231, 235)
-      pdf.rect(20, y, 170, 8, 'F')
-      
-      pdf.setFontSize(9)
-      pdf.setTextColor(0, 0, 0)
-      pdf.text('Fecha', 22, y + 5)
-      pdf.text('Tutor', 52, y + 5)
-      pdf.text('Tema', 92, y + 5)
-      pdf.text('Compromiso', 132, y + 5)
-      
-      y += 8
-      
-      // Filas de la tabla
-      pdf.setFontSize(8)
-      for (const t of historialData) {
-        if (y > 260) {
-          pdf.addPage()
-          y = 20
-        }
-        
-        const fecha = formatDate(t.fecha)
-        const tutorText = t.tutor || 'N/A'
-        const tema = t.tema || 'N/A'
-        const compromiso = t.compromiso || 'N/A'
-        
-        pdf.text(fecha, 22, y + 4)
-        pdf.text(tutorText.length > 15 ? tutorText.substring(0, 12) + '...' : tutorText, 52, y + 4)
-        pdf.text(tema.length > 15 ? tema.substring(0, 12) + '...' : tema, 92, y + 4)
-        pdf.text(compromiso.length > 15 ? compromiso.substring(0, 12) + '...' : compromiso, 132, y + 4)
-        
-        y += 6
+      if (response.alumno) {
+        setAlumno(response.alumno)
+        setHistorial(response.historial || [])
+        setGrupo(response.alumno.grupos?.[0] || null)
+        setTutor(response.alumno.tutor || null)
+        setCategorias(response.categorias || [])
+      } else {
+        setError('No se encontró el expediente del alumno')
       }
+    } catch (error) {
+      console.error('Error al cargar expediente:', error)
+      setError('Error al cargar el expediente del alumno')
+    } finally {
+      setLoading(false)
     }
-    
-    // Pie de página
-    y += 10
-    pdf.line(20, y, 190, y)
-    y += 5
-    pdf.setFontSize(8)
-    pdf.setTextColor(100, 100, 100)
-    pdf.text('Este documento fue generado automáticamente por el Sistema de Tutorías UTN', 105, y + 3, { align: 'center' })
-    pdf.text('Universidad Tecnológica de Nayarit - Sistema Integral de Tutorías', 105, y + 8, { align: 'center' })
-    
-    // Guardar PDF
-    pdf.save(`Expediente_${nombre.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`)
-    
-  } catch (error) {
-    console.error('Error al generar PDF:', error)
-    alert('Error al generar el PDF: ' + error.message)
-  } finally {
-    setGenerandoPDF(false)
   }
-}
 
-  const semaforoEstilo = {
-    rojo:     { badge: 'badge-error',   texto: 'Prioridad alta', color: 'text-red-600' },
-    amarillo: { badge: 'badge-warning', texto: 'Seguimiento preventivo', color: 'text-yellow-600' },
-    verde:    { badge: 'badge-success', texto: 'Estable', color: 'text-green-600' },
+  // ============================================================
+  // 1. INFORME INDIVIDUAL DE CADA TUTORÍA (Word - SIN GRÁFICAS)
+  // ============================================================
+  const generarWordTutoria = async (tutoria) => {
+    setGenerandoInforme(true)
+
+    try {
+      const nombreAlumno = alumno?.nombre_completo || 'Alumno'
+      const matricula = alumno?.matricula || 'N/A'
+      const fecha = tutoria.fecha
+      const tema = tutoria.tema || 'No especificado'
+      const compromiso = tutoria.compromiso || 'Sin compromisos'
+      const observaciones = tutoria.observaciones || 'Sin observaciones'
+      const promedio = tutoria.promedio_tutoria || tutoria.promedio || 'N/A'
+
+      const contenido = `
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Registro de Tutoría</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 30px; }
+            h1, h2 { color: #1e40af; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+            th { background-color: #f3f4f6; }
+            .firma { margin-top: 40px; display: flex; justify-content: space-around; }
+            .firma p { margin-bottom: 40px; }
+            .center { text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div style="text-align: center;">
+            <h1>Universidad Tecnológica de Nayarit</h1>
+            <h2>Sistema de Tutorías - Registro de Sesión</h2>
+            <p>Fecha: ${fecha}</p>
+            <hr/>
+          </div>
+
+          <h2>Datos del Alumno</h2>
+          <table>
+            <tr><td width="120"><strong>Nombre:</strong></td><td>${nombreAlumno}</td></tr>
+            <tr><td><strong>Matrícula:</strong></td><td>${matricula}</td></tr>
+          </table>
+
+          <h2>Registro de Tutoría</h2>
+          <table>
+            <tr><td width="120"><strong>Tema tratado:</strong></td><td>${tema}</td></tr>
+            <tr><td><strong>Compromisos del alumno:</strong></td><td>${compromiso}</td></tr>
+            <tr><td><strong>Observaciones del tutor:</strong></td><td>${observaciones}</td></tr>
+            <tr><td><strong>Promedio:</strong></td><td>${promedio}</td></tr>
+          </table>
+
+          <div style="margin-top: 40px; display: flex; justify-content: space-around;">
+            <div style="text-align: center;">
+              <p style="margin-bottom: 40px;">__________________________</p>
+              <p><strong>Firma del Tutor</strong></p>
+            </div>
+            <div style="text-align: center;">
+              <p style="margin-bottom: 40px;">__________________________</p>
+              <p><strong>Firma del Alumno</strong></p>
+            </div>
+          </div>
+          <div style="text-align: center; font-size: 10px; color: #6b7280; margin-top: 20px;">
+            Documento generado automáticamente por el Sistema de Tutorías UTN
+          </div>
+        </body>
+        </html>
+      `
+
+      const blob = new Blob([contenido], { type: 'application/msword' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `Registro_Tutoria_${nombreAlumno.replace(/\s/g, '_')}_${fecha}.doc`
+      link.click()
+      URL.revokeObjectURL(link.href)
+
+    } catch (error) {
+      console.error('Error al generar Word:', error)
+      alert('Error al generar el informe')
+    } finally {
+      setGenerandoInforme(false)
+    }
+  }
+
+  // ============================================================
+  // 2. EXPEDIENTE COMPLETO (Word CON GRÁFICAS usando Chart.js)
+  // ============================================================
+  const generarWordExpediente = async () => {
+    setGenerandoExpediente(true)
+
+    try {
+      // Función para capturar canvas de Chart.js
+      const capturarCanvas = (ref) => {
+        if (ref && ref.current) {
+          const canvas = ref.current.canvas
+          if (canvas) {
+            return canvas.toDataURL('image/png')
+          }
+        }
+        return null
+      }
+
+      // Capturar cada gráfica
+      const imgDoughnut = capturarCanvas(doughnutRef)
+      const imgRadar = capturarCanvas(radarRef)
+      const imgBar = capturarCanvas(barRef)
+
+      const nombre = alumno?.nombre_completo || 'Alumno'
+      const matricula = alumno?.matricula || 'N/A'
+      const promedio = alumno?.promedio_general || alumno?.promedio || 'N/A'
+      const semaforo = alumno?.semaforo_color || 'verde'
+      const grupoNombre = grupo?.clave || 'Sin grupo'
+      const tutorNombre = tutor?.nombre || 'Sin tutor'
+
+      const rojos = categorias.filter(c => c.color === 'rojo').length
+      const amarillos = categorias.filter(c => c.color === 'amarillo').length
+      const verdes = categorias.filter(c => c.color === 'verde').length
+
+      let contenido = `
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Expediente Académico</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1, h2 { color: #1e40af; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            th, td { border: 1px solid #d1d5db; padding: 6px; text-align: left; }
+            th { background-color: #f3f4f6; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .section { margin-bottom: 20px; }
+            .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; color: white; }
+            .badge-verde { background-color: #22c55e; }
+            .badge-amarillo { background-color: #f59e0b; }
+            .badge-rojo { background-color: #ef4444; }
+            .graficas-container { display: flex; flex-wrap: wrap; justify-content: space-around; margin: 20px 0; }
+            .grafica-item { text-align: center; margin: 10px; }
+            .grafica-item img { max-width: 100%; max-height: 200px; }
+            .grafica-item p { font-weight: bold; margin-top: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Universidad Tecnológica de Nayarit</h1>
+            <h2>Sistema de Tutorías - Expediente Académico</h2>
+            <p>Fecha de generación: ${new Date().toLocaleDateString()}</p>
+            <hr/>
+          </div>
+
+          <div class="section">
+            <h2>Datos del Alumno</h2>
+            <table>
+              <tr><td width="120"><strong>Nombre:</strong></td><td>${nombre}</td></tr>
+              <tr><td><strong>Matrícula:</strong></td><td>${matricula}</td></tr>
+              <tr><td><strong>Grupo:</strong></td><td>${grupoNombre}</td></tr>
+              <tr><td><strong>Tutor:</strong></td><td>${tutorNombre}</td></tr>
+              <tr><td><strong>Promedio:</strong></td><td>${promedio}</td></tr>
+              <tr><td><strong>Estado General:</strong></td>
+                <td><span class="badge badge-${semaforo}">${semaforo.toUpperCase()}</span></td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2>Estado por Categorías</h2>
+            <table>
+              <thead><tr><th>Categoría</th><th>Estado</th><th>Observación</th></tr></thead>
+              <tbody>
+                ${categorias.map(c => `
+                  <tr>
+                    <td>${CATEGORIAS[c.categoria]?.label || c.categoria}</td>
+                    <td><span class="badge badge-${c.color}">${c.color.toUpperCase()}</span></td>
+                    <td>${c.observacion || 'Sin observación'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2>Estadísticas de Categorías</h2>
+            <table>
+              <tr>
+                <td style="background-color: #fef2f2; padding: 10px; text-align: center;">
+                  <strong style="color: #dc2626;">🔴 Prioridad Alta</strong><br/>
+                  <span style="font-size: 24px;">${rojos}</span>
+                </td>
+                <td style="background-color: #fef3c7; padding: 10px; text-align: center;">
+                  <strong style="color: #d97706;">🟡 Seguimiento</strong><br/>
+                  <span style="font-size: 24px;">${amarillos}</span>
+                </td>
+                <td style="background-color: #d1fae5; padding: 10px; text-align: center;">
+                  <strong style="color: #059669;">🟢 Estable</strong><br/>
+                  <span style="font-size: 24px;">${verdes}</span>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2>Gráficas de Desempeño</h2>
+            <div class="graficas-container">
+              ${imgDoughnut ? `
+                <div class="grafica-item">
+                  <img src="${imgDoughnut}" alt="Estado por Categorías" />
+                  <p>📊 Estado por Categorías</p>
+                </div>
+              ` : ''}
+              ${imgRadar ? `
+                <div class="grafica-item">
+                  <img src="${imgRadar}" alt="Desempeño del Alumno" />
+                  <p>📈 Desempeño del Alumno</p>
+                </div>
+              ` : ''}
+              ${imgBar ? `
+                <div class="grafica-item">
+                  <img src="${imgBar}" alt="Tutorías por Mes" />
+                  <p>📉 Tutorías por Mes</p>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>Historial de Tutorías</h2>
+            ${historial.length === 0 ? '<p>No hay tutorías registradas</p>' : `
+              <table>
+                <thead><tr><th>Fecha</th><th>Tutor</th><th>Tema</th><th>Compromiso</th></tr></thead>
+                <tbody>
+                  ${historial.map(t => `
+                    <tr>
+                      <td>${t.fecha}</td>
+                      <td>${t.tutor || 'N/A'}</td>
+                      <td>${t.tema || 'N/A'}</td>
+                      <td>${t.compromiso || 'N/A'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `}
+          </div>
+
+          <div style="margin-top:30px; text-align:center; font-size:10px; color:#6b7280;">
+            <hr/>
+            <p>Documento generado automáticamente por el Sistema de Tutorías UTN</p>
+          </div>
+        </body>
+        </html>
+      `
+
+      const blob = new Blob([contenido], { type: 'application/msword' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `Expediente_${nombre.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.doc`
+      link.click()
+      URL.revokeObjectURL(link.href)
+
+    } catch (error) {
+      console.error('Error al generar Word expediente:', error)
+      alert('Error al generar el expediente Word')
+    } finally {
+      setGenerandoExpediente(false)
+    }
   }
 
   const getSemaforoInfo = (semaforo) => {
-    return semaforoEstilo[semaforo] || { badge: 'badge-ghost', texto: 'Sin estado', color: 'text-gray-600' }
+    const estilos = {
+      rojo: { badge: 'badge-error', texto: 'Prioridad alta', color: 'text-red-600' },
+      amarillo: { badge: 'badge-warning', texto: 'Seguimiento preventivo', color: 'text-yellow-600' },
+      verde: { badge: 'badge-success', texto: 'Estable', color: 'text-green-600' }
+    }
+    return estilos[semaforo] || { badge: 'badge-ghost', texto: 'Sin estado', color: 'text-gray-600' }
   }
 
   const formatDate = (dateString) => {
@@ -243,6 +372,118 @@ const generarReportePDF = () => {
   const getInitials = (nombre) => {
     if (!nombre) return 'A'
     return nombre.split(' ').map(n => n[0]).slice(0, 2).join('')
+  }
+
+  // ========== DATOS PARA GRÁFICAS ==========
+
+  const categoriasData = {
+    labels: categorias.map(c => CATEGORIAS[c.categoria]?.label || c.categoria),
+    datasets: [{
+      data: categorias.map(c => c.color === 'rojo' ? 3 : c.color === 'amarillo' ? 2 : 1),
+      backgroundColor: categorias.map(c => c.color === 'rojo' ? '#ef4444' : c.color === 'amarillo' ? '#f59e0b' : '#22c55e'),
+      borderWidth: 0
+    }]
+  }
+
+  const categoriasOptions = {
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 15,
+          usePointStyle: true,
+          pointStyle: 'circle',
+          font: { size: 11 }
+        }
+      }
+    },
+    cutout: '60%'
+  }
+
+  const radarData = {
+    labels: ['Económico', 'Académico', 'Personal', 'Familiar', 'Promedio', 'Tutorías'],
+    datasets: [{
+      label: 'Desempeño del Alumno',
+      data: [
+        categorias.find(c => c.categoria === 'economico')?.color === 'rojo' ? 30 :
+          categorias.find(c => c.categoria === 'economico')?.color === 'amarillo' ? 60 : 90,
+        categorias.find(c => c.categoria === 'academico')?.color === 'rojo' ? 30 :
+          categorias.find(c => c.categoria === 'academico')?.color === 'amarillo' ? 60 : 90,
+        categorias.find(c => c.categoria === 'personal')?.color === 'rojo' ? 30 :
+          categorias.find(c => c.categoria === 'personal')?.color === 'amarillo' ? 60 : 90,
+        categorias.find(c => c.categoria === 'familiar')?.color === 'rojo' ? 30 :
+          categorias.find(c => c.categoria === 'familiar')?.color === 'amarillo' ? 60 : 90,
+        parseFloat(alumno?.promedio_general || 0),
+        Math.min(historial.length * 10, 100)
+      ],
+      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+      borderColor: '#3b82f6',
+      pointBackgroundColor: '#3b82f6',
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: '#3b82f6'
+    }]
+  }
+
+  const radarOptions = {
+    plugins: {
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          stepSize: 20
+        }
+      }
+    }
+  }
+
+  const tutoriasPorMes = historial.reduce((acc, t) => {
+    const mes = new Date(t.fecha).getMonth()
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    const key = meses[mes]
+    acc[key] = (acc[key] || 0) + 1
+    return acc
+  }, {})
+
+  const barData = {
+    labels: Object.keys(tutoriasPorMes).length > 0 ? Object.keys(tutoriasPorMes) : ['Sin datos'],
+    datasets: [{
+      label: 'Tutorías por Mes',
+      data: Object.values(tutoriasPorMes).length > 0 ? Object.values(tutoriasPorMes) : [0],
+      backgroundColor: '#3b82f6',
+      borderRadius: 8,
+      borderSkipped: false
+    }]
+  }
+
+  const barOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          display: false
+        },
+        ticks: {
+          stepSize: 1
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
+    }
   }
 
   if (loading) {
@@ -273,24 +514,17 @@ const generarReportePDF = () => {
     )
   }
 
-  const semaforoInfo = getSemaforoInfo(formData.semaforo_color || alumno?.semaforo_color)
+  const semaforoInfo = getSemaforoInfo(alumno.semaforo_color)
   const nombreAlumno = alumno.nombre_completo || alumno.nombre || 'Alumno'
   const matriculaAlumno = alumno.matricula || 'No disponible'
   const grupoNombre = grupo?.clave || grupo?.nombre || 'Sin grupo'
-  const tutorNombre = tutor?.nombre_completo || tutor?.nombre || 'Sin tutor'
+  const tutorNombre = tutor?.nombre || 'Sin tutor'
 
   return (
     <Layout user={user} onLogout={onLogout}>
       <div id="reporte-expediente" className="p-6 max-w-7xl mx-auto bg-white">
-        
-        {/* Encabezado del reporte - visible solo en PDF */}
-        <div className="text-center mb-6 hidden-pdf">
-          <img src="/imagenes/logoutnay.png" alt="UTN" className="h-16 mx-auto mb-2" />
-          <h2 className="text-xl font-bold">Universidad Tecnológica de Nayarit</h2>
-          <h3 className="text-lg">Sistema de Tutorías - Expediente Académico</h3>
-          <p className="text-sm text-gray-500">Fecha de generación: {new Date().toLocaleDateString()}</p>
-        </div>
 
+        {/* Encabezado */}
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="btn btn-sm btn-outline">
@@ -298,30 +532,21 @@ const generarReportePDF = () => {
             </button>
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Expediente del Alumno</h1>
-              <p className="text-gray-500 mt-1">Detalle académico y tutorías registradas</p>
+              <p className="text-gray-500 mt-1">{nombreAlumno}</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={generarReportePDF} 
-              className="btn btn-sm bg-red-600 hover:bg-red-700 text-white border-none"
-              disabled={generandoPDF}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={generarWordExpediente}
+              className="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white border-none"
+              disabled={generandoExpediente}
             >
-              {generandoPDF ? ' Generando PDF...' : ' Descargar PDF'}
-          </button>
-            {!editando && user?.rol === 'admin' && (
-              <button onClick={handleEdit} className="btn btn-sm bg-primary-500 hover:bg-primary-600 text-white border-none">
-                 Editar
-              </button>
-            )}
+              {generandoExpediente ? '⏳ Generando...' : '📊 Expediente Word'}
+            </button>
           </div>
         </div>
 
-        {error && (
-          <div className="alert alert-error mb-4">
-            <span>{error}</span>
-          </div>
-        )}
+        {error && <div className="alert alert-error mb-4"><span>{error}</span></div>}
 
         {/* Tarjeta de perfil */}
         <div className="card bg-base-100 shadow-sm border border-base-200 mb-6">
@@ -331,51 +556,26 @@ const generarReportePDF = () => {
                 {getInitials(nombreAlumno)}
               </div>
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-xs text-gray-400">Nombre completo</p>
-                  <p className="font-semibold text-gray-800">{nombreAlumno}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Matrícula</p>
-                  <p className="font-semibold text-gray-800 font-mono text-sm">{matriculaAlumno}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Grupo</p>
-                  <p className="font-semibold text-gray-800">{grupoNombre}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Tutor</p>
-                  <p className="font-semibold text-gray-800">{tutorNombre}</p>
-                </div>
+                <div><p className="text-xs text-gray-400">Nombre completo</p><p className="font-semibold">{nombreAlumno}</p></div>
+                <div><p className="text-xs text-gray-400">Matrícula</p><p className="font-semibold font-mono">{matriculaAlumno}</p></div>
+                <div><p className="text-xs text-gray-400">Grupo</p><p className="font-semibold">{grupoNombre}</p></div>
+                <div><p className="text-xs text-gray-400">Tutor</p><p className="font-semibold">{tutorNombre}</p></div>
               </div>
             </div>
 
-            {/* Formulario de edición o vista */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
               <div className="stats shadow bg-base-200 border-l-4 border-primary-500">
                 <div className="stat py-4">
                   <div className="stat-title">Promedio actual</div>
-                  {editando ? (
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      className="input input-bordered w-full mt-2"
-                      value={formData.promedio}
-                      onChange={(e) => setFormData({...formData, promedio: e.target.value})}
-                    />
-                  ) : (
-                    <div className="stat-value text-primary-500 text-3xl">{alumno.promedio_general || alumno.promedio || 'N/A'}</div>
-                  )}
+                  <div className="stat-value text-primary-500 text-3xl">{alumno.promedio_general || alumno.promedio || 'N/A'}</div>
                 </div>
               </div>
-              
               <div className="stats shadow bg-base-200 border-l-4 border-gray-400">
                 <div className="stat py-4">
                   <div className="stat-title">Tutorías recibidas</div>
                   <div className="stat-value text-gray-600">{historial.length}</div>
                 </div>
               </div>
-              
               <div className="stats shadow bg-base-200 border-l-4 border-yellow-500">
                 <div className="stat py-4">
                   <div className="stat-title">Última tutoría</div>
@@ -386,62 +586,98 @@ const generarReportePDF = () => {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-500">Estado académico:</p>
-                {editando ? (
-                  <select 
-                    className="select select-bordered select-sm"
-                    value={formData.semaforo_color}
-                    onChange={(e) => setFormData({...formData, semaforo_color: e.target.value})}
-                  >
-                    <option value="verde"> Estable</option>
-                    <option value="amarillo"> Seguimiento preventivo</option>
-                    <option value="rojo"> Prioridad alta</option>
-                  </select>
-                ) : (
-                  <span className={`badge ${semaforoInfo.badge}`}>{semaforoInfo.texto}</span>
-                )}
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-500">Razón del estado:</p>
-                {editando ? (
-                  <textarea 
-                    className="textarea textarea-bordered w-full text-sm"
-                    rows={2}
-                    value={formData.semaforo_razon}
-                    onChange={(e) => setFormData({...formData, semaforo_razon: e.target.value})}
-                    placeholder="Razón del estado actual..."
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{alumno.semaforo_razon || 'Sin razón registrada'}</p>
-                )}
-              </div>
+            <div className="mt-4">
+              <p className="text-sm text-gray-500">Estado académico:</p>
+              <span className={`badge ${semaforoInfo.badge}`}>{semaforoInfo.texto}</span>
+              {alumno.semaforo_razon && (
+                <p className="text-sm text-gray-600 mt-1">{alumno.semaforo_razon}</p>
+              )}
             </div>
-
-            {editando && (
-              <div className="mt-4 flex justify-end gap-2">
-                <button onClick={handleSave} className="btn btn-sm btn-primary" disabled={saving}>
-                  {saving ? 'Guardando...' : 'Guardar cambios'}
-                </button>
-                <button onClick={handleCancelEdit} className="btn btn-sm btn-outline">Cancelar</button>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Historial de tutorías */}
+        {/* ===== GRÁFICAS CON REFS ===== */}
+        <div id="graficas-expediente" className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+          {/* Gráfica 1: Categorías (Doughnut) */}
+          <div className="card bg-base-100 shadow-sm border border-base-200">
+            <div className="card-body">
+              <h2 className="card-title text-lg">Estado por Categorías</h2>
+              <p className="text-sm text-gray-500 mb-2">Distribución de áreas evaluadas</p>
+              {categorias.length > 0 ? (
+                <>
+                  <div className="h-56 flex items-center justify-center">
+                    <Doughnut ref={doughnutRef} data={categoriasData} options={categoriasOptions} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {categorias.map(c => {
+                      const info = CATEGORIAS[c.categoria] || { label: c.categoria, icon: '📌' }
+                      const colores = COLORES[c.color] || COLORES.verde
+                      return (
+                        <div key={c.id} className={`flex items-center gap-2 p-2 rounded-lg ${colores.bg}`}>
+                          <span>{info.icon}</span>
+                          <span className="text-sm font-medium">{info.label}</span>
+                          <span className={`badge badge-sm ml-auto ${colores.badge}`}>
+                            {c.color.toUpperCase()}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-400 text-center py-8">No hay categorías registradas</p>
+              )}
+            </div>
+          </div>
+
+          {/* Gráfica 2: Radar - Desempeño */}
+          <div className="card bg-base-100 shadow-sm border border-base-200">
+            <div className="card-body">
+              <h2 className="card-title text-lg">Desempeño del Alumno</h2>
+              <p className="text-sm text-gray-500 mb-2">Evaluación integral del alumno</p>
+              <div className="h-56 flex items-center justify-center">
+                <Radar ref={radarRef} data={radarData} options={radarOptions} />
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <div className="text-center p-2 bg-blue-50 rounded-lg">
+                  <p className="text-xs text-gray-600">Promedio</p>
+                  <p className="text-lg font-bold text-blue-500">{alumno.promedio_general || 'N/A'}</p>
+                </div>
+                <div className="text-center p-2 bg-green-50 rounded-lg">
+                  <p className="text-xs text-gray-600">Tutorías</p>
+                  <p className="text-lg font-bold text-green-500">{historial.length}</p>
+                </div>
+                <div className="text-center p-2 bg-purple-50 rounded-lg">
+                  <p className="text-xs text-gray-600">Estado</p>
+                  <p className="text-lg font-bold text-purple-500">{semaforoInfo.texto}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Gráfica 3: Barras - Tutorías por Mes */}
+          <div className="card bg-base-100 shadow-sm border border-base-200 md:col-span-2">
+            <div className="card-body">
+              <h2 className="card-title text-lg">Tutorías por Mes</h2>
+              <p className="text-sm text-gray-500 mb-2">Historial de tutorías mensuales</p>
+              <div className="h-48">
+                <Bar ref={barRef} data={barData} options={barOptions} />
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Historial de Tutorías con botón de informe en Word */}
         <div className="card bg-base-100 shadow-sm border border-base-200">
           <div className="card-body p-0">
             <div className="px-6 py-4 border-b border-base-200 flex justify-between items-center">
-              <h2 className="font-semibold text-gray-800">Historial de tutorías</h2>
+              <h2 className="font-semibold text-gray-800">Historial de Tutorías</h2>
               <span className="badge badge-primary">{historial.length} registros</span>
             </div>
             {historial.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-400">No hay tutorías registradas</p>
-              </div>
+              <p className="text-gray-400 text-center py-8">No hay tutorías registradas</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="table table-zebra">
@@ -451,17 +687,25 @@ const generarReportePDF = () => {
                       <th>Tutor</th>
                       <th>Tema</th>
                       <th>Compromiso</th>
-                      <th>Observaciones</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {historial.map((tutoria, index) => (
-                      <tr key={tutoria.id || index} className="hover">
+                    {historial.map((tutoria) => (
+                      <tr key={tutoria.id} className="hover">
                         <td className="font-mono text-sm">{formatDate(tutoria.fecha)}</td>
-                        <td className="text-sm">{tutoria.tutor || 'No especificado'}</td>
-                        <td className="text-sm">{tutoria.tema || 'No especificado'}</td>
-                        <td className="text-sm">{tutoria.compromiso || 'Sin compromisos'}</td>
-                        <td className="text-sm">{tutoria.observaciones || 'Sin observaciones'}</td>
+                        <td className="text-sm">{tutoria.tutor}</td>
+                        <td className="text-sm">{tutoria.tema}</td>
+                        <td className="text-sm text-gray-600">{tutoria.compromiso}</td>
+                        <td>
+                          <button
+                            onClick={() => generarWordTutoria(tutoria)}
+                            className="btn btn-xs btn-outline btn-info"
+                            disabled={generandoInforme}
+                          >
+                            {generandoInforme ? '⏳' : '📄 Informe'}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -470,6 +714,7 @@ const generarReportePDF = () => {
             )}
           </div>
         </div>
+
       </div>
     </Layout>
   )
