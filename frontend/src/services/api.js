@@ -155,26 +155,29 @@ login: async (email, password) => {
   },
 
   // ADMIN - USUARIOS 
-  getUsuarios: async (search = '') => {
-    const response = await authFetch(`/admin/usuarios?search=${search}`);
-    const data = await response.json();
-    
-    if (data.data && Array.isArray(data.data)) {
-      return {
-        ...data,
-        data: data.data.map(usuario => ({
-          ...usuario,
-          semaforo: usuario.semaforo || 'verde',
-          promedio: usuario.promedio || 'N/A',
-          grupo_id: usuario.grupo_id || null,
-          ultima_tutoria: usuario.ultima_tutoria || null,
-          alumno_id: usuario.alumno?.id || null
-        }))
-      };
-    }
-    
-    return data;
-  },
+  // ADMIN - USUARIOS 
+getUsuarios: async (search = '') => {
+  const response = await authFetch(`/admin/usuarios?search=${search}`);
+  const data = await response.json();
+  
+  if (data.data && Array.isArray(data.data)) {
+    return {
+      ...data,
+      data: data.data.map(usuario => ({
+        ...usuario,
+        // El semáforo debe venir del alumno, no del usuario
+        semaforo: usuario.alumno?.semaforo_color || usuario.semaforo || 'verde',
+        semaforo_color: usuario.alumno?.semaforo_color || usuario.semaforo_color || 'verde',
+        promedio: usuario.alumno?.promedio_general || usuario.promedio || 'N/A',
+        grupo_id: usuario.alumno?.grupo_actual?.id || usuario.grupo_id || null,
+        ultima_tutoria: usuario.alumno?.ultima_tutoria_fecha || usuario.ultima_tutoria || null,
+        alumno_id: usuario.alumno?.id || null
+      }))
+    };
+  }
+  
+  return data;
+},
   
   crearUsuario: async (data) => {
     const response = await authFetch('/admin/usuarios', {

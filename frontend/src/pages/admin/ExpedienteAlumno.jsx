@@ -23,10 +23,10 @@ ChartJS.register(
 // CATEGORÍAS
 // ============================================
 const CATEGORIAS = {
-  economico: { label: 'Económico', icon: '💰', description: 'Situación económica del alumno' },
-  academico: { label: 'Académico', icon: '📚', description: 'Rendimiento académico y calificaciones' },
-  personal: { label: 'Personal', icon: '🧠', description: 'Situación personal y emocional' },
-  familiar: { label: 'Familiar', icon: '👨‍👩‍👧‍👦', description: 'Situación familiar y entorno' }
+  economico: { label: 'Económico', description: 'Situación económica del alumno' },
+  academico: { label: 'Académico', description: 'Rendimiento académico y calificaciones' },
+  personal: { label: 'Personal', description: 'Situación personal y emocional' },
+  familiar: { label: 'Familiar', description: 'Situación familiar y entorno' }
 }
 
 const COLORES = {
@@ -290,19 +290,19 @@ const ExpedienteAlumno = ({ user, onLogout }) => {
               ${imgDoughnut ? `
                 <div class="grafica-item">
                   <img src="${imgDoughnut}" alt="Estado por Categorías" />
-                  <p>📊 Estado por Categorías</p>
+                  <p>Estado por Categorías</p>
                 </div>
               ` : ''}
               ${imgRadar ? `
                 <div class="grafica-item">
                   <img src="${imgRadar}" alt="Desempeño del Alumno" />
-                  <p>📈 Desempeño del Alumno</p>
+                  <p>Desempeño del Alumno</p>
                 </div>
               ` : ''}
               ${imgBar ? `
                 <div class="grafica-item">
                   <img src="${imgBar}" alt="Tutorías por Mes" />
-                  <p>📉 Tutorías por Mes</p>
+                  <p>Tutorías por Mes</p>
                 </div>
               ` : ''}
             </div>
@@ -541,7 +541,7 @@ const ExpedienteAlumno = ({ user, onLogout }) => {
               className="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white border-none"
               disabled={generandoExpediente}
             >
-              {generandoExpediente ? '⏳ Generando...' : '📊 Expediente Word'}
+              {generandoExpediente ? '⏳ Generando...' : ' Expediente Word'}
             </button>
           </div>
         </div>
@@ -611,7 +611,7 @@ const ExpedienteAlumno = ({ user, onLogout }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {categorias.map(c => {
-                      const info = CATEGORIAS[c.categoria] || { label: c.categoria, icon: '📌' }
+                      const info = CATEGORIAS[c.categoria] || { label: c.categoria}
                       const colores = COLORES[c.color] || COLORES.verde
                       return (
                         <div key={c.id} className={`flex items-center gap-2 p-2 rounded-lg ${colores.bg}`}>
@@ -703,7 +703,7 @@ const ExpedienteAlumno = ({ user, onLogout }) => {
                             className="btn btn-xs btn-outline btn-info"
                             disabled={generandoInforme}
                           >
-                            {generandoInforme ? '⏳' : '📄 Informe'}
+                            {generandoInforme ? '⏳' : 'Informe'}
                           </button>
                         </td>
                       </tr>

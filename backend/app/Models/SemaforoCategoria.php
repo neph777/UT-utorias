@@ -34,7 +34,7 @@ class SemaforoCategoria extends Model
     // Categorías disponibles
     public static function categorias()
     {
-        return ['academico', 'conductual', 'personal', 'asistencia'];
+        return ['academico', 'economico', 'personal', 'familiar'];
     }
 
     // Obtener el color más crítico (rojo > amarillo > verde)

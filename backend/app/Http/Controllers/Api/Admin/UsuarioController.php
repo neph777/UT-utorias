@@ -21,11 +21,11 @@ class UsuarioController extends Controller
         try {
             $search = $request->get('search');
             
-            $query = Usuario::query();
+            $query = Usuario::with('alumno'); // <-- AGREGAR ESTO
             
             if ($search) {
                 $query->where('nombre_completo', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             }
             
             $usuarios = $query->paginate(15);
