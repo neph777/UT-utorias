@@ -10,28 +10,32 @@ class Alerta extends Model
     use HasFactory;
 
     protected $table = 'alertas';
-    
+
     protected $fillable = [
         'alumno_id',
         'tutor_id',
         'tipo',
-        'asunto',  
+        'estado',
+        'asunto',
         'fecha',
+        'hora',
+        'lugar',
+        'mensaje',
         'atendida'
     ];
 
     protected $casts = [
-        'fecha' => 'date',
+        'fecha' => 'datetime',
         'atendida' => 'boolean'
     ];
 
     public function alumno()
     {
-        return $this->belongsTo(Alumno::class);
+        return $this->belongsTo(Alumno::class, 'alumno_id');
     }
 
     public function tutor()
     {
-        return $this->belongsTo(Tutor::class);
+        return $this->belongsTo(Tutor::class, 'tutor_id');
     }
 }

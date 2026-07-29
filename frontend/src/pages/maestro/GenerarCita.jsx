@@ -11,8 +11,12 @@ const GenerarCita = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const ahora = new Date()
+
   const [form, setForm] = useState({
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`,
+    hora: `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`,
     asunto: '',
     observaciones: ''
   })
@@ -54,7 +58,7 @@ const GenerarCita = ({ user, onLogout }) => {
     try {
       const response = await api.generarCita({
         alumno_id: parseInt(alumnoId),
-        fecha: form.fecha,
+        fecha:`${form.fecha} ${form.hora}:00`,
         asunto: form.asunto,
         observaciones: form.observaciones
       })
@@ -150,6 +154,7 @@ const GenerarCita = ({ user, onLogout }) => {
               <div className="mt-4 bg-base-200 rounded-lg p-4 text-left w-full max-w-sm space-y-1">
                 <p className="text-sm text-gray-600"><span className="font-medium">Alumno:</span> {alumno?.nombre}</p>
                 <p className="text-sm text-gray-600"><span className="font-medium">Fecha:</span> {form.fecha}</p>
+                <p className="text-sm text-gray-600"><span className="font-medium">Hora:</span> {form.hora}</p>
                 <p className="text-sm text-gray-600"><span className="font-medium">Asunto:</span> {form.asunto}</p>
                 {form.observaciones && (
                   <p className="text-sm text-gray-600"><span className="font-medium">Observaciones:</span> {form.observaciones}</p>
@@ -160,7 +165,8 @@ const GenerarCita = ({ user, onLogout }) => {
                   onClick={() => {
                     setEnviado(false)
                     setForm({
-                      fecha: new Date().toISOString().split('T')[0],
+                      fecha: `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}`,
+                      hora: `${String(ahora.getHours()).padStart(2,'0')}:${String(ahora.getMinutes()).padStart(2,'0')}`,
                       asunto: '',
                       observaciones: ''
                     })
@@ -203,12 +209,38 @@ const GenerarCita = ({ user, onLogout }) => {
               {/* Formulario */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fecha
+                  </label>
+
                   <input
                     type="date"
                     className="input input-bordered w-full focus:border-primary-500 focus:outline-none"
                     value={form.fecha}
-                    onChange={e => setForm({ ...form, fecha: e.target.value })}
+                    onChange={e =>
+                      setForm({
+                        ...form,
+                        fecha: e.target.value
+                      })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hora
+                  </label>
+
+                  <input
+                    type="time"
+                    className="input input-bordered w-full focus:border-primary-500 focus:outline-none"
+                    value={form.hora}
+                    onChange={e =>
+                      setForm({
+                        ...form,
+                        hora: e.target.value
+                      })
+                    }
                   />
                 </div>
               </div>

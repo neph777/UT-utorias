@@ -52,46 +52,45 @@ const authFetch = async (url, options = {}) => {
 // API ENDPOINTS
 export const api = {
   // AUTENTICACIÓN 
-login: async (email, password) => {
-  console.log('API login llamada con:', email);
-  console.log('URL:', `${API_URL}/login`);
-  
-  try {
-    const response = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ email, password })
-    });
+  login: async (email, password) => {
+    console.log('API login llamada con:', email);
+    console.log('URL:', `${API_URL}/login`);
     
-    console.log('Respuesta status:', response.status);
-    console.log('Respuesta ok?', response.ok);
-    
-    const data = await response.json();
-    console.log('Respuesta data:', data);
-    
-    if (response.ok && data.access_token) {
-      setToken(data.access_token);
-      return { success: true, user: data.user };
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      
+      console.log('Respuesta status:', response.status);
+      console.log('Respuesta ok?', response.ok);
+      
+      const data = await response.json();
+      console.log('Respuesta data:', data);
+      
+      if (response.ok && data.access_token) {
+        setToken(data.access_token);
+        return { success: true, user: data.user };
+      }
+      
+      return { 
+        success: false, 
+        error: data.message || 'Error al iniciar sesión' 
+      };
+      
+    } catch (error) {
+      console.error('Error de red:', error);
+      return { 
+        success: false, 
+        error: 'No se pudo conectar con el servidor' 
+      };
     }
-    
-    return { 
-      success: false, 
-      error: data.message || 'Error al iniciar sesión' 
-    };
-    
-  } catch (error) {
-    console.error('Error de red:', error);
-    return { 
-      success: false, 
-      error: 'No se pudo conectar con el servidor' 
-    };
-  }
-},
+  },
 
-  
   logout: async () => {
     try {
       await authFetch('/logout', { method: 'POST' });
@@ -101,38 +100,38 @@ login: async (email, password) => {
   },
   
   getPerfil: async () => {
-  console.log('=== getPerfil iniciado ===');
-  const token = getToken();
-  console.log('Token existe:', !!token);
-  
-  if (!token) {
-    console.log('No hay token');
-    throw new Error('No hay token');
-  }
-  
-  try {
-    const response = await authFetch('/perfil');
-    console.log('Status response:', response.status);
+    console.log('=== getPerfil iniciado ===');
+    const token = getToken();
+    console.log('Token existe:', !!token);
     
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+    if (!token) {
+      console.log('No hay token');
+      throw new Error('No hay token');
     }
     
-    const data = await response.json();
-    console.log('Datos recibidos:', data);
-    
-    return {
-      id: data.id,
-      email: data.email,
-      nombre_completo: data.nombre_completo || data.name,
-      rol: data.rol,
-      name: data.nombre_completo || data.name
-    };
-  } catch (error) {
-    console.error('Error en getPerfil:', error);
-    throw error;
-  }
-},
+    try {
+      const response = await authFetch('/perfil');
+      console.log('Status response:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Datos recibidos:', data);
+      
+      return {
+        id: data.id,
+        email: data.email,
+        nombre_completo: data.nombre_completo || data.name,
+        rol: data.rol,
+        name: data.nombre_completo || data.name
+      };
+    } catch (error) {
+      console.error('Error en getPerfil:', error);
+      throw error;
+    }
+  },
   
   cambiarPassword: async (data) => {
     const response = await authFetch('/cambiar-password', {
@@ -156,28 +155,28 @@ login: async (email, password) => {
 
   // ADMIN - USUARIOS 
   // ADMIN - USUARIOS 
-getUsuarios: async (search = '') => {
-  const response = await authFetch(`/admin/usuarios?search=${search}`);
-  const data = await response.json();
-  
-  if (data.data && Array.isArray(data.data)) {
-    return {
-      ...data,
-      data: data.data.map(usuario => ({
-        ...usuario,
-        // El semáforo debe venir del alumno, no del usuario
-        semaforo: usuario.alumno?.semaforo_color || usuario.semaforo || 'verde',
-        semaforo_color: usuario.alumno?.semaforo_color || usuario.semaforo_color || 'verde',
-        promedio: usuario.alumno?.promedio_general || usuario.promedio || 'N/A',
-        grupo_id: usuario.alumno?.grupo_actual?.id || usuario.grupo_id || null,
-        ultima_tutoria: usuario.alumno?.ultima_tutoria_fecha || usuario.ultima_tutoria || null,
-        alumno_id: usuario.alumno?.id || null
-      }))
-    };
-  }
-  
-  return data;
-},
+  getUsuarios: async (search = '') => {
+    const response = await authFetch(`/admin/usuarios?search=${search}`);
+    const data = await response.json();
+    
+    if (data.data && Array.isArray(data.data)) {
+      return {
+        ...data,
+        data: data.data.map(usuario => ({
+          ...usuario,
+          // El semáforo debe venir del alumno, no del usuario
+          semaforo: usuario.alumno?.semaforo_color || usuario.semaforo || 'verde',
+          semaforo_color: usuario.alumno?.semaforo_color || usuario.semaforo_color || 'verde',
+          promedio: usuario.alumno?.promedio_general || usuario.promedio || 'N/A',
+          grupo_id: usuario.alumno?.grupo_actual?.id || usuario.grupo_id || null,
+          ultima_tutoria: usuario.alumno?.ultima_tutoria_fecha || usuario.ultima_tutoria || null,
+          alumno_id: usuario.alumno?.id || null
+        }))
+      };
+    }
+    
+    return data;
+  },
   
   crearUsuario: async (data) => {
     const response = await authFetch('/admin/usuarios', {
@@ -202,116 +201,116 @@ getUsuarios: async (search = '') => {
     return response.json();
   },
   
-// ADMIN - GRUPOS
-getGrupos: async () => {
-  console.log('=== getGrupos llamado ===');
-  try {
-    const response = await authFetch('/admin/grupos');
-    console.log('Response status:', response.status);
+  // ADMIN - GRUPOS
+  getGrupos: async () => {
+    console.log('=== getGrupos llamado ===');
+    try {
+      const response = await authFetch('/admin/grupos');
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Datos recibidos:', data);
+      return data;
+    } catch (error) {
+      console.error('Error en getGrupos:', error);
+      throw error;
+    }
+  },
+
+  crearGrupo: async (data) => {
+    console.log('=== crearGrupo llamado ===');
+    console.log('Datos a enviar:', data);
+    try {
+      const response = await authFetch('/admin/grupos', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      console.log('Response status:', response.status);
+      const result = await response.json();
+      console.log('Respuesta:', result);
+      return result;
+    } catch (error) {
+      console.error('Error en crearGrupo:', error);
+      throw error;
+    }
+  },
+
+  actualizarGrupo: async (id, data) => {
+    console.log('=== actualizarGrupo llamado ===');
+    console.log('ID:', id, 'Datos:', data);
+    try {
+      const response = await authFetch(`/admin/grupos/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      console.log('Response status:', response.status);
+      const result = await response.json();
+      console.log('Respuesta:', result);
+      return result;
+    } catch (error) {
+      console.error('Error en actualizarGrupo:', error);
+      throw error;
+    }
+  },
+
+  eliminarGrupo: async (id) => {
+    console.log('=== eliminarGrupo llamado ===');
+    console.log('ID:', id);
+    try {
+      const response = await authFetch(`/admin/grupos/${id}`, {
+        method: 'DELETE'
+      });
+      console.log('Response status:', response.status);
+      const result = await response.json();
+      console.log('Respuesta:', result);
+      return result;
+    } catch (error) {
+      console.error('Error en eliminarGrupo:', error);
+      throw error;
+    }
+  },
+
+  getAlumnosDisponibles: async () => {
+    const response = await authFetch('/admin/alumnos-disponibles');
     const data = await response.json();
-    console.log('Datos recibidos:', data);
-    return data;
-  } catch (error) {
-    console.error('Error en getGrupos:', error);
-    throw error;
-  }
-},
+    
+    if (Array.isArray(data)) {
+      return data.map(alumno => ({
+        id: alumno.id,
+        nombre_completo: alumno.nombre_completo,
+        nombre: alumno.nombre_completo, 
+        email: alumno.email,
+        matricula: alumno.matricula || alumno.email,
+        semaforo: alumno.semaforo || 'verde',
+        carrera: alumno.carrera || 'No especificada'
+      }));
+    }
+    return [];
+  },
 
-crearGrupo: async (data) => {
-  console.log('=== crearGrupo llamado ===');
-  console.log('Datos a enviar:', data);
-  try {
-    const response = await authFetch('/admin/grupos', {
+  asignarAlumnos: async (grupoId, alumnosIds) => {
+    const response = await authFetch(`/admin/grupos/${grupoId}/asignar-alumnos`, {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify({ alumnos: alumnosIds })
     });
-    console.log('Response status:', response.status);
-    const result = await response.json();
-    console.log('Respuesta:', result);
-    return result;
-  } catch (error) {
-    console.error('Error en crearGrupo:', error);
-    throw error;
-  }
-},
-
-actualizarGrupo: async (id, data) => {
-  console.log('=== actualizarGrupo llamado ===');
-  console.log('ID:', id, 'Datos:', data);
-  try {
-    const response = await authFetch(`/admin/grupos/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
-    console.log('Response status:', response.status);
-    const result = await response.json();
-    console.log('Respuesta:', result);
-    return result;
-  } catch (error) {
-    console.error('Error en actualizarGrupo:', error);
-    throw error;
-  }
-},
-
-eliminarGrupo: async (id) => {
-  console.log('=== eliminarGrupo llamado ===');
-  console.log('ID:', id);
-  try {
-    const response = await authFetch(`/admin/grupos/${id}`, {
-      method: 'DELETE'
-    });
-    console.log('Response status:', response.status);
-    const result = await response.json();
-    console.log('Respuesta:', result);
-    return result;
-  } catch (error) {
-    console.error('Error en eliminarGrupo:', error);
-    throw error;
-  }
-},
-
-getAlumnosDisponibles: async () => {
-  const response = await authFetch('/admin/alumnos-disponibles');
-  const data = await response.json();
-  
-  if (Array.isArray(data)) {
-    return data.map(alumno => ({
-      id: alumno.id,
-      nombre_completo: alumno.nombre_completo,
-      nombre: alumno.nombre_completo, 
-      email: alumno.email,
-      matricula: alumno.matricula || alumno.email,
-      semaforo: alumno.semaforo || 'verde',
-      carrera: alumno.carrera || 'No especificada'
-    }));
-  }
-  return [];
-},
-
-asignarAlumnos: async (grupoId, alumnosIds) => {
-  const response = await authFetch(`/admin/grupos/${grupoId}/asignar-alumnos`, {
-    method: 'POST',
-    body: JSON.stringify({ alumnos: alumnosIds })
-  });
-  return response.json();
-},
+    return response.json();
+  },
   
   // ADMIN - EXPEDIENTE 
   getExpedienteAlumno: async (alumnoId) => {
-  console.log('=== getExpedienteAlumno (admin) llamado ===');
-  console.log('Alumno ID:', alumnoId);
-  
-  try {
-    const response = await authFetch(`/admin/alumnos/${alumnoId}/expediente`);
-    console.log('Response status:', response.status);
-    const data = await response.json();
-    console.log('Expediente data:', data);
-    return data;
-  } catch (error) {
-    console.error('Error en getExpedienteAlumno:', error);
-    throw error;
-  }
-},
+    console.log('=== getExpedienteAlumno (admin) llamado ===');
+    console.log('Alumno ID:', alumnoId);
+    
+    try {
+      const response = await authFetch(`/admin/alumnos/${alumnoId}/expediente`);
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Expediente data:', data);
+      return data;
+    } catch (error) {
+      console.error('Error en getExpedienteAlumno:', error);
+      throw error;
+    }
+  },
   
   actualizarExpediente: async (alumnoId, data) => {
     console.log('=== actualizarExpediente llamado ===');
@@ -392,13 +391,12 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
   },
   
   actualizarCategoriasTutor: async (alumnoId, data) => {
-  const response = await authFetch(`/tutor/alumno/${alumnoId}/categorias`, {
-    method: 'PUT',
-    body: JSON.stringify(data)
-  });
-  return response.json();
-},
-
+    const response = await authFetch(`/tutor/alumno/${alumnoId}/categorias`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  },
 
   generarCita: async (data) => {
     const response = await authFetch('/tutor/cita', {
@@ -407,22 +405,22 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
     });
     return response.json();
   },
-  getTutorExpediente: async (alumnoId) => {
-  console.log('=== getTutorExpediente llamado ===');
-  console.log('Alumno ID:', alumnoId);
-  
-  try {
-    const response = await authFetch(`/tutor/alumno/${alumnoId}/expediente`);
-    console.log('Response status:', response.status);
-    const data = await response.json();
-    console.log('Expediente data:', data);
-    return data;
-  } catch (error) {
-    console.error('Error en getTutorExpediente:', error);
-    throw error;
-  }
-},
 
+  getTutorExpediente: async (alumnoId) => {
+    console.log('=== getTutorExpediente llamado ===');
+    console.log('Alumno ID:', alumnoId);
+    
+    try {
+      const response = await authFetch(`/tutor/alumno/${alumnoId}/expediente`);
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Expediente data:', data);
+      return data;
+    } catch (error) {
+      console.error('Error en getTutorExpediente:', error);
+      throw error;
+    }
+  },
 
   // ALUMNO - EXPEDIENTE
   getMiExpediente: async () => {
@@ -430,9 +428,29 @@ asignarAlumnos: async (grupoId, alumnosIds) => {
     return response.json();
   },
 
-  // ALUMNO - DASHBOARD
-  getMiExpediente: async () => {
-    const response = await authFetch('/alumno/expediente');
+  solicitarTutoria: async (data) => {
+    const response = await authFetch('/alumno/solicitar-tutoria', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  },
+    getSolicitudesTutor: async () => {
+    const response = await authFetch('/tutor/solicitudes');
+    return response.json();
+  },
+
+  aceptarSolicitud: async (id) => {
+    const response = await authFetch(`/tutor/solicitudes/${id}/aceptar`, {
+      method: 'POST'
+    });
+    return response.json();
+  },
+
+  rechazarSolicitud: async (id) => {
+    const response = await authFetch(`/tutor/solicitudes/${id}/rechazar`, {
+      method: 'POST'
+    });
     return response.json();
   },
 };

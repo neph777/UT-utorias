@@ -227,7 +227,7 @@ public function generarCita(Request $request)
             ], 403);
         }
         
-        
+        $fechaHora = \Carbon\Carbon::parse($request->fecha);
         // 
         $alerta = \App\Models\Alerta::create([
             'alumno_id' => $request->alumno_id,
@@ -308,6 +308,109 @@ public function getStats()
         
     } catch (\Exception $e) {
         return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+/**
+ * Obtener solicitudes de tutoría pendientes
+ */
+public function getSolicitudes()
+{
+    try {
+
+        $user = auth()->user();
+
+        $tutor = \App\Models\Tutor::where('usuario_id', $user->id)->first();
+
+        if (!$tutor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tutor no encontrado'
+            ]);
+        }
+
+        $solicitudes = Alerta::with('alumno.usuario')
+            ->where('tutor_id', $tutor->id)
+            ->where('tipo', 'solicitud')
+            ->where('estado', 'pendiente')
+            ->orderBy('fecha')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $solicitudes
+        ]);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'success'=>false,
+            'message'=>$e->getMessage()
+        ],500);
+
+    }
+}
+
+
+public function aceptarSolicitud($id)
+{
+    try {
+
+        $alerta = Alerta::findOrFail($id);
+
+        // Cambiar estado de la solicitud
+        $alerta->estado = 'aceptada';
+        $alerta->atendida = true;
+        $alerta->save();
+
+        // Crear automáticamente la cita para el alumno
+        Alerta::create([
+            'alumno_id' => $alerta->alumno_id,
+            'tutor_id'  => $alerta->tutor_id,
+            'tipo'      => 'academica',
+            'estado'    => 'aceptada',
+            'asunto'    => 'Cita de tutoría: ' . $alerta->asunto,
+            'fecha'     => $alerta->fecha,
+            'atendida'  => false
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Solicitud aceptada y cita creada correctamente.'
+        ]);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ],500);
+
+    }
+}
+
+public function rechazarSolicitud($id)
+{
+    try {
+
+        $alerta = Alerta::findOrFail($id);
+
+        $alerta->estado = 'rechazada';
+        $alerta->atendida = true;
+
+        $alerta->save();
+
+        return response()->json([
+            'success'=>true,
+            'message'=>'Solicitud rechazada'
+        ]);
+
+    } catch (\Exception $e){
+
+        return response()->json([
+            'success'=>false,
+            'message'=>$e->getMessage()
+        ],500);
+
     }
 }
 }

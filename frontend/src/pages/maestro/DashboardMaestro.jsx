@@ -21,9 +21,12 @@ const DashboardMaestro = ({ user, onLogout }) => {
   const [showReporteModal, setShowReporteModal] = useState(false)
   const [selectedAlumnosReporte, setSelectedAlumnosReporte] = useState([])
   const [citaData, setCitaData] = useState({ fecha: '', asunto: '', alumnoId: null })
+  const [solicitudes, setSolicitudes] = useState([])
+  const [loadingSolicitudes, setLoadingSolicitudes] = useState(false)
 
   useEffect(() => {
     cargarDatos()
+    cargarSolicitudes()
   }, [])
 
   const cargarDatos = async () => {
@@ -59,6 +62,74 @@ const DashboardMaestro = ({ user, onLogout }) => {
       console.error('Error cargando alumnos:', error)
     }
   }
+  const cargarSolicitudes = async () => {
+    try {
+        setLoadingSolicitudes(true)
+
+        const res = await api.getSolicitudesTutor()
+
+        if (res.success) {
+            setSolicitudes(res.data)
+        }
+
+    } catch (error) {
+        console.error(error)
+    } finally {
+        setLoadingSolicitudes(false)
+    }
+  }
+
+  const aceptarSolicitud = async (id) => {
+
+    try {
+
+        const res = await api.aceptarSolicitud(id)
+
+        if (res.success) {
+
+            alert("Tutoría aceptada correctamente")
+
+            cargarSolicitudes()
+
+            cargarDatos()
+
+        }
+
+    } catch (error) {
+
+        alert(
+            error.response?.data?.message ||
+            "No se pudo aceptar la solicitud"
+        )
+
+    }
+
+  }
+
+  const rechazarSolicitud = async (id) => {
+
+    try {
+
+        const res = await api.rechazarSolicitud(id)
+
+        if (res.success) {
+
+            alert("Solicitud rechazada")
+
+            cargarSolicitudes()
+
+        }
+
+    } catch (error) {
+
+        alert(
+            error.response?.data?.message ||
+            "No se pudo rechazar"
+        )
+
+    }
+
+  }
 
   const handleGroupChange = (grupoId) => {
     setSelectedGroupId(grupoId)
@@ -83,6 +154,17 @@ const DashboardMaestro = ({ user, onLogout }) => {
     }
     return textos[color] || color
   }
+  const formatearFecha = (fecha) => {
+      if (!fecha) return 'Sin tutorías'
+
+      return new Date(fecha).toLocaleDateString('es-MX', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
 
   const generarReporteWord = () => {
     const alumnosSeleccionados = selectedAlumnosReporte.length > 0
@@ -121,7 +203,7 @@ const DashboardMaestro = ({ user, onLogout }) => {
       Matrícula: ${a.matricula}
       Promedio: ${a.promedio}
       Nivel de atención: ${a.semaforo?.toUpperCase() || 'VERDE'}
-      Última tutoría: ${a.ultima_tutoria || 'Sin tutorías'}
+      Última tutoría: ${a.ultima_tutoria ? formatearFecha(a.ultima_tutoria) : 'Sin tutorías'}
       ────────────────────────────────────────────────
       `).join('')}
 
@@ -223,6 +305,85 @@ const DashboardMaestro = ({ user, onLogout }) => {
           </div>
         )}
 
+        {/* Solicitudes de tutoría */}
+<div className="card bg-base-100 shadow-sm border border-base-200 mb-8">
+
+    <div className="card-body">
+
+        <h2 className="text-2xl font-bold mb-4">
+            Solicitudes de tutoría
+        </h2>
+
+        {loadingSolicitudes ? (
+
+            <div className="text-center py-8">
+                <span className="loading loading-spinner loading-lg"></span>
+            </div>
+
+        ) : solicitudes.length === 0 ? (
+
+            <div className="text-center text-gray-500 py-6">
+                No hay solicitudes pendientes.
+            </div>
+
+        ) : (
+
+            <div className="space-y-4">
+
+                {solicitudes.map((solicitud) => (
+
+                    <div
+                        key={solicitud.id}
+                        className="border rounded-xl p-4 flex justify-between items-center"
+                    >
+
+                        <div>
+
+                            <p className="font-bold text-lg">
+                                {solicitud.alumno.usuario.nombre}
+                            </p>
+
+                            <p className="text-gray-600">
+                                {solicitud.asunto}
+                            </p>
+
+                            <p className="text-sm text-gray-500">
+                                {formatearFecha(solicitud.fecha)}
+                                {solicitud.hora && ` • ${solicitud.hora.substring(0,5)}`}
+                            </p>
+
+                        </div>
+
+                        <div className="flex gap-2">
+
+                            <button
+                                className="btn btn-success btn-sm"
+                                onClick={() => aceptarSolicitud(solicitud.id)}
+                            >
+                                Aceptar
+                            </button>
+
+                            <button
+                                className="btn btn-error btn-sm"
+                                onClick={() => rechazarSolicitud(solicitud.id)}
+                            >
+                                Rechazar
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                ))}
+
+            </div>
+
+        )}
+
+    </div>
+
+</div>
+
         {/* Tabla de alumnos */}
         <div className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -256,7 +417,9 @@ const DashboardMaestro = ({ user, onLogout }) => {
                         </span>
                       </td>
                       <td className="text-sm text-gray-500">
-                        {alumno.ultima_tutoria || L.table?.noTutorias || 'Sin tutorías'}
+                        {alumno.ultima_tutoria
+                          ? formatearFecha(alumno.ultima_tutoria)
+                          : (L.table?.noTutorias || 'Sin tutorías')}
                       </td>
                       <td>
                         <div className="flex gap-2 flex-wrap">

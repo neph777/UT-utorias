@@ -35,7 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/alumnos/{id}/expediente', [AlumnoController::class, 'expediente']);
         Route::put('/alumnos/{id}/expediente', [AlumnoController::class, 'update']);
 
-        //Backup
+        // Backup
         Route::apiResource('backups', BackupController::class);
         Route::get('/backups/config', [BackupController::class, 'getConfig']);
         Route::post('/backups/config', [BackupController::class, 'saveConfig']);
@@ -51,10 +51,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/cita', [DashboardTutorController::class, 'generarCita']);
         Route::get('/alumno/{id}/expediente', [App\Http\Controllers\Api\Tutor\TutorAlumnoController::class, 'expediente']);
         Route::put('/alumno/{id}/categorias', [App\Http\Controllers\Api\Tutor\TutorAlumnoController::class, 'actualizarCategorias']);
+        Route::get('/solicitudes', [DashboardTutorController::class, 'getSolicitudes']);
+        Route::post('/solicitudes/{id}/aceptar', [DashboardTutorController::class, 'aceptarSolicitud']);
+        Route::post('/solicitudes/{id}/rechazar', [DashboardTutorController::class, 'rechazarSolicitud']);
     });
 
-    // Rutas para alumnos 
+    // Rutas para alumnos
     Route::middleware('role:alumno')->prefix('alumno')->group(function () {
         Route::get('/expediente', [App\Http\Controllers\Api\Alumno\ExpedienteController::class, 'show']);
+        Route::post('/solicitar-tutoria', [App\Http\Controllers\Api\Alumno\ExpedienteController::class, 'solicitarTutoria']);
     });
 });
