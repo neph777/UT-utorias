@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/backups/config', [BackupController::class, 'getConfig']);
         Route::post('/backups/config', [BackupController::class, 'saveConfig']);
         Route::get('/backups/{id}/download', [BackupController::class, 'download']);
+        Route::post('/backups/{id}/restore', [BackupController::class, 'restore']);
     });
 
     // Rutas de tutor

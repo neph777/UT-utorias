@@ -123,6 +123,62 @@ class BackupController extends Controller
             return response()->json(['success' => false, 'message' => 'Error al descargar backup'], 500);
         }
     }
+
+    /**
+     * Restaurar un respaldo
+     */
+    public function restore($id)
+    {
+        try {
+
+            $backup = Respaldo::findOrFail($id);
+
+            $ruta = storage_path('app/backups/' . $backup->nombre);
+
+            if (!file_exists($ruta)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El archivo de respaldo no existe.'
+                ], 404);
+            }
+
+            $database = config('database.connections.mysql.database');
+            $username = config('database.connections.mysql.username');
+            $password = config('database.connections.mysql.password');
+            $host = config('database.connections.mysql.host');
+
+            $comando = sprintf(
+                'mysql --host=%s --user=%s --password=%s %s < %s',
+                escapeshellarg($host),
+                escapeshellarg($username),
+                escapeshellarg($password),
+                escapeshellarg($database),
+                escapeshellarg($ruta)
+            );
+            DB::disconnect();
+            
+            system($comando, $resultado);
+
+            if ($resultado !== 0) {
+                throw new \Exception('No fue posible restaurar el respaldo.');
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Base de datos restaurada correctamente.'
+            ]);
+
+        } catch (\Exception $e) {
+
+            Log::error('Error restaurando respaldo: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ],500);
+
+        }
+    }
     
     /**
      * Eliminar backup
@@ -256,6 +312,7 @@ class BackupController extends Controller
             escapeshellarg($database),
             escapeshellarg($ruta)
         );
+        DB::disconnect();
         
         system($comando, $resultado);
         
